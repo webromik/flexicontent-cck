@@ -1108,7 +1108,7 @@ class ParentClassItem extends FCModelAdmin
 		$autoPublished = !empty($this->_record->submit_conf['autopublished']);
 
 		// Modify the form based on Edit State access controls.
-		if ( !$autoPublished && !$canEditState )
+		if (!$autoPublished && !$canEditState)
 		{
 			$frontend_new = $isNew && $app->isSite();
 
@@ -1123,7 +1123,8 @@ class ParentClassItem extends FCModelAdmin
 				$form->setFieldAttribute('publish_up', 'hint', JText::_('FLEXI_FIELD_ACCESS_CHECKED_DURING_SAVE'));
 				$form->setFieldAttribute('publish_down', 'hint', JText::_('FLEXI_FIELD_ACCESS_CHECKED_DURING_SAVE'));
 			}
-			else
+			// (item edit form ACL) edit publish up / down
+			elseif (empty($perms->EditPublishUpDown))
 			{
 				$form->setFieldAttribute('publish_up', 'disabled', 'true');
 				$form->setFieldAttribute('publish_down', 'disabled', 'true');
@@ -1132,7 +1133,7 @@ class ParentClassItem extends FCModelAdmin
 			}
 
 			// Skip disabling & unsetting state for new items in frontend to allow override via menu (auto-publish), menu override must be checked during store
-			if ( !$frontend_new )
+			if (!$frontend_new)
 			{
 				$form->setFieldAttribute('state', 'disabled', 'true');
 				$form->setFieldAttribute('state', 'filter', 'unset');
@@ -2081,7 +2082,7 @@ class ParentClassItem extends FCModelAdmin
 				$data['vstate'] = $AutoApproveChanges ? 2 : 1;
 
 				// Allow 'publish_up' & 'publish_down' only for NEW items (we may override these with specific value below ...)
-				if (!$isNew)
+				if (!$isNew && !$user->authorise('flexicontent.editpublishupdown', 'com_flexicontent'))
 				{
 					unset($data['publish_up']);
 					unset($data['publish_down']);
