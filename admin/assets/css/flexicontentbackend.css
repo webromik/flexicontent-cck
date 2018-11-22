@@ -8,7 +8,7 @@ select.fc_is_selmultiple.use_select2_lib {
 .flexicontent *:not(.input-append):not(.input-prepend):not(.input-group) > div.use_select2_lib {
 	margin: 1px 2px 1px 2px;
 }
-.flexicontent *:not(.input-append):not(.input-prepend):not(.input-group) > select {
+.flexicontent *:not(.input-append):not(.input-prepend):not(.input-group) > select:not(.custom-select) {
 	display: inline-block;
 	margin: 1px 2px 1px 2px;
 	padding: 4px;
@@ -98,6 +98,7 @@ span.fcselect_lbl {
 	padding: 0px 4px 0px 0px !important;
 	margin: 0px !important;
 }
+.group-fcset input,
 input[type="checkbox"].fc_checkradio,
 input[type="radio"].fc_checkradio,
 [name="adminForm"] input[type="checkbox"]:not(.skip_fccr),
@@ -110,6 +111,7 @@ input[type="radio"].fc_checkradio,
 	opacity: 0 !important;
 	display: none !important;
 }
+.group-fcset label input,
 label input[type="checkbox"].fc_checkradio,
 label input[type="radio"].fc_checkradio,
 [name="adminForm"] input[type="checkbox"]:only-child,
@@ -125,6 +127,7 @@ label input[type="radio"].fc_checkradio,
 	vertical-align: bottom !important;
 }
 div.select2-drop.select2-drop-multi li.select2-result-selectable > .select2-result-label,
+.group-fcset input + label,
 input[type="checkbox"].fc_checkradio + label:not(.plupload_button):not(.btn),
 input[type="radio"].fc_checkradio + label:not(.plupload_button):not(.btn),
 [name="adminForm"] input[type="checkbox"] + label:not(.plupload_button):not(.btn),
@@ -146,6 +149,7 @@ div.select2-drop.select2-drop-multi li.select2-result-selectable > .select2-resu
 	box-sizing: border-box !important;
 }
 div.select2-drop.select2-drop-multi li.select2-result.select2-disabled > .select2-result-label,
+.group-fcset input[type="checkbox"]:disabled + label,
 input[type="checkbox"].fc_checkradio:disabled + label:not(.plupload_button):not(.btn),
 [name="adminForm"] input[type="checkbox"]:not(.skip_fccr):disabled + label:not(.plupload_button):not(.btn),
 .flexicontent input[type="checkbox"]:not(.skip_fccr):disabled + label:not(.plupload_button):not(.btn) {
@@ -154,6 +158,7 @@ input[type="checkbox"].fc_checkradio:disabled + label:not(.plupload_button):not(
 	cursor: default !important;
 	opacity: 0.6 !important;
 }
+.group-fcset input[type="radio"]:disabled + label,
 input[type="radio"].fc_checkradio:disabled + label:not(.plupload_button):not(.btn),
 [name="adminForm"] input[type="radio"]:not(.skip_fccr):disabled + label:not(.plupload_button):not(.btn),
 .flexicontent input[type="radio"]:not(.skip_fccr):disabled + label:not(.plupload_button):not(.btn) {
@@ -164,26 +169,31 @@ input[type="radio"].fc_checkradio:disabled + label:not(.plupload_button):not(.bt
 	opacity: 0.6 !important;
 }
 div.select2-drop.select2-drop-multi li.select2-result-selectable > .select2-result-label,
+.group-fcset input[type="checkbox"] + label,
 input[type="checkbox"].fc_checkradio + label,
 [name="adminForm"] input[type="checkbox"] + label:not(.plupload_button):not(.btn),
 .flexicontent input[type="checkbox"] + label:not(.plupload_button):not(.btn) {
 	background: url(../images/checks2.png) no-repeat 0 0 !important;
 }
+.group-fcset input[type="radio"] + label,
 input[type="radio"].fc_checkradio + label,
 [name="adminForm"] input[type="radio"] + label:not(.plupload_button):not(.btn),
 .flexicontent input[type="radio"] + label:not(.plupload_button):not(.btn) {
 	background: url(../images/checks2.png) no-repeat 0 -72px !important;
 }
+.group-fcset input[type="checkbox"] + label.green,
 input[type="checkbox"].fc_checkradio + label.green,
 [name="adminForm"] input[type="checkbox"] + label.green:not(.plupload_button):not(.btn),
 .flexicontent input[type="checkbox"] + label.green:not(.plupload_button):not(.btn) {
 	background: url(../images/checks3.png) no-repeat 0 0 !important;
 }
+.group-fcset input[type="radio"] + label.green,
 input[type="radio"].fc_checkradio + label.green,
 [name="adminForm"] input[type="radio"] + label.green:not(.plupload_button):not(.btn),
 .flexicontent input[type="radio"] + label.green:not(.plupload_button):not(.btn) {
 	background: url(../images/checks3.png) no-repeat 0 -72px !important;
 }
+.group-fcset label.green.single,
 .flexicontent input[type="radio"] + label.green.single,
 .flexicontent input[type="checkbox"] + label.green.single,
 .fc_checkradio + label.green.single {
@@ -191,16 +201,19 @@ input[type="radio"].fc_checkradio + label.green,
 	margin: 0px !important;
 }
 div.select2-drop.select2-drop-multi li.select2-result.select2-selected-visible > .select2-result-label,
+.group-fcset input[type="checkbox"]:checked + label,
 input[type="checkbox"]:checked + label:not(.plupload_button):not(.btn),
 [name="adminForm"] input[type="checkbox"]:checked + label:not(.plupload_button):not(.btn),
 .flexicontent input[type="checkbox"]:checked + label:not(.plupload_button):not(.btn) {
 	background-position: 0 -24px !important;
 }
+.group-fcset input[type="radio"]:checked + label,
 input[type="radio"]:checked + label:not(.plupload_button):not(.btn),
 [name="adminForm"] input[type="radio"]:checked + label:not(.plupload_button):not(.btn),
 .flexicontent input[type="radio"]:checked + label:not(.plupload_button):not(.btn) {
 	background-position: 0 -48px !important;
 }
+.group-fcset input,
 input[type="checkbox"].fc_checkradio,
 input[type="checkbox"].fc_checkradio:focus,
 input[type="radio"].fc_checkradio,
@@ -215,6 +228,7 @@ input[type="radio"].fc_checkradio:focus,
 .flexicontent input[type="radio"]:focus {
 	border: 0px !important;
 }
+.group-fcset input,
 input.fc_checkradio {
 	margin: 0px 4px 3px 4px;
 	padding: 0px;
@@ -557,20 +571,26 @@ body .nowrap_hidden {
 	white-space: nowrap;
 }
 #flexicontent div.input-group-addon > *:not(:last-child):not(.select2-container),
-#flexicontent div.input-append > *:not(:last-child):not(.select2-container) {
+#flexicontent div.input-append > *:not(:last-child):not(.select2-container),
+#flexicontent div.input-group-addon > *:not(:last-child) > *,
+#flexicontent div.input-append > *:not(:last-child) > * {
 	border-top-right-radius: 0px !important;
 	border-bottom-right-radius: 0px !important;
 }
 #flexicontent div.input-group-addon > *:not(:first-child),
-#flexicontent div.input-prepend > *:not(:first-child) {
+#flexicontent div.input-prepend > *:not(:first-child),
+#flexicontent div.input-group-addon > *:not(:first-child) > *,
+#flexicontent div.input-prepend > *:not(:first-child) > * {
 	border-top-left-radius: 0px !important;
 	border-bottom-left-radius: 0px !important;
 }
-.input-prepend.input-append .add-on:not(:last-child) {
+.input-prepend.input-append .add-on:not(:last-child),
+.input-prepend.input-append .add-on:not(:last-child) > * {
 	border-top-right-radius: 0;
 	border-bottom-right-radius: 0;
 }
-.input-prepend.input-append .add-on:not(:first-child) {
+.input-prepend.input-append .add-on:not(:first-child),
+.input-prepend.input-append .add-on:not(:first-child) > * {
 	border-top-left-radius: 0;
 	border-bottom-left-radius: 0;
 }
@@ -590,13 +610,13 @@ body .nowrap_hidden {
 	padding: 0px;
 	overflow: hidden;
 }
-.flexicontent .fc_less_parameter::before {
-	background-color: darkcyan;
+.flexicontent :not(.fc_less_parameter) > .fc_less_parameter::before {
+	background-color: black;
 	color: white;
 	font-size: 12px;
 	font-weight: bold;
 	border-radius: 4px;
-	content: "L";
+	content: "css";
 	padding: 2px 4px;
 	box-sizing: content-box;
 	height: 1em;
@@ -803,8 +823,9 @@ div.statetoggler {
 	padding: 4px 4px;
 	display: inline-block;
 	width: auto;
-	line-height: 14px;
-	height: 14px;
+	line-height: 18px;
+	height: 18px;
+	box-sizing: content-box;
 }
 div.statetoggler .icon-publish:before,
 div.statetoggler .icon-checkmark-2:before {
@@ -837,6 +858,8 @@ div.statetoggler > div.statetoggler_inner > div.stateopener {
 	text-align: left;
 	vertical-align: baseline;
 	cursor: pointer;
+	text-decoration: none;
+	position: relative;
 }
 div.statetoggler > div.statetoggler_inner > div.stateopener.ajax-loader {
 	background-position: center;
@@ -883,6 +906,7 @@ div.statetoggler > div.statetoggler_inner > .options > span {
 	min-height: 24px;
 	min-width: auto;
 	background: none repeat scroll 0 0 transparent;
+	color: black;
 	outline: none;
 	text-decoration: none;
 	white-space: nowrap;
@@ -997,8 +1021,10 @@ div.statetoggler > div.statetoggler_inner > .options > span > img {
 	display: block;
 	padding: 2px;
 }
-body .fc-iblock {
-	display: inline-block !important;
+body .fc-iblock
+#flexicontent .fc-iblock,
+.flexicontent .fc-iblock {
+	display: inline-block;
 }
 body .fc-nowrap-box,
 #flexicontent .nowrap_box,
@@ -1008,9 +1034,26 @@ body .fc-nowrap-box,
 	display: inline-block;
 	float: none;
 }
+body .fc-nowrap-box .label,
 #flexicontent .nowrap_box .label,
 .flexicontent .nowrap_box .label {
 	vertical-align: top;
+}
+body .fc-nowrap-box .fc-nowrap-box,
+body .fc-nowrap-box .nowrap_box,
+#flexicontent .nowrap_box .fc-nowrap-box,
+#flexicontent .nowrap_box .nowrap_box,
+.flexicontent .nowrap_box .fc-nowrap-box,
+.flexicontent .nowrap_box .nowrap_box {
+	vertical-align: middle;
+}
+body .fc-nowrap-box .fc-nowrap-box .label,
+body .fc-nowrap-box .nowrap_box .label,
+#flexicontent .nowrap_box .fc-nowrap-box .label,
+#flexicontent .nowrap_box .nowrap_box .label,
+.flexicontent .nowrap_box .fc-nowrap-box .label,
+.flexicontent .nowrap_box .nowrap_box .label {
+	vertical-align: middle;
 }
 #flexicontent .filterbuttons_head .nowrap_box .label,
 .flexicontent .filterbuttons_head .nowrap_box .label {
@@ -1046,45 +1089,58 @@ body .fc-nowrap-box,
 	margin: 0 4px 4px 0 !important;
 	width: 100%;
 }
+#flexicontent .fc-xpended .input-group-text:first-child,
+#flexicontent .fc-xpended-row .input-group-text:first-child,
 #flexicontent .fc-xpended .add-on:first-child,
 #flexicontent .fc-xpended-row .add-on:first-child {
 	min-width: 150px;
 	float: left;
+	text-align: right;
 	margin: 0 0 0 0;
 	padding-left: 4px;
 	padding-right: 4px;
+	display: inline-block;
 }
+#flexicontent .fc-xpended .input-group-text.fc-lbl-short,
+#flexicontent .fc-xpended-row .input-group-text.fc-lbl-short,
 #flexicontent .fc-xpended .add-on.fc-lbl-short,
 #flexicontent .fc-xpended-row .add-on.fc-lbl-short {
 	min-width: unset;
 }
-#flexicontent [class^="fc-xpended"] > div.select2-container,
-#flexicontent [class^="fc-xpended"] > div.select2-container,
-#flexicontent [class*="fc-xpended"] > div.select2-container,
-#flexicontent [class*="fc-xpended"] > div.select2-container {
-	vertical-align: top;
+#flexicontent [class^="fc-xpended"] .input-group-text,
+#flexicontent [class*="fc-xpended"] .input-group-text {
+	padding: 0px;
 }
-#flexicontent [class^="fc-xpended"] > div.select2-container .select2-choice > .select2-chosen,
-#flexicontent [class^="fc-xpended"] > div.select2-container .select2-choice > .select2-chosen,
-#flexicontent [class*="fc-xpended"] > div.select2-container .select2-choice > .select2-chosen,
-#flexicontent [class*="fc-xpended"] > div.select2-container .select2-choice > .select2-chosen {
+#flexicontent [class^="fc-xpended"] div.select2-container,
+#flexicontent [class*="fc-xpended"] div.select2-container {
+	vertical-align: middle;
+	margin: 0;
+}
+#flexicontent [class^="fc-xpended"] div.select2-container:first-child .select2-choice .select2-arrow,
+#flexicontent [class*="fc-xpended"] div.select2-container:first-child .select2-choice .select2-arrow {
+	border-radius: 0;
+}
+#flexicontent [class^="fc-xpended"] div.select2-container .select2-choice > .select2-chosen,
+#flexicontent [class^="fc-xpended"] div.select2-container .select2-choice > .select2-chosen,
+#flexicontent [class*="fc-xpended"] div.select2-container .select2-choice > .select2-chosen,
+#flexicontent [class*="fc-xpended"] div.select2-container .select2-choice > .select2-chosen {
 	font-size: 12px;
 	line-height: 26px;
 	min-height: 26px;
 	font-weight: normal !important;
 }
-#flexicontent [class^="fc-xpended"] > select,
-#flexicontent [class^="fc-xpended"] > select,
-#flexicontent [class^="fc-xpended"] > div.select2-container > ul.select2-choices,
-#flexicontent [class^="fc-xpended"] > div.select2-container > ul.select2-choices,
-#flexicontent [class^="fc-xpended"] > div.select2-container > a.select2-choice,
-#flexicontent [class^="fc-xpended"] > div.select2-container > a.select2-choice,
-#flexicontent [class*="fc-xpended"] > select,
-#flexicontent [class*="fc-xpended"] > select,
-#flexicontent [class*="fc-xpended"] > div.select2-container > ul.select2-choices,
-#flexicontent [class*="fc-xpended"] > div.select2-container > ul.select2-choices,
-#flexicontent [class*="fc-xpended"] > div.select2-container > a.select2-choice,
-#flexicontent [class*="fc-xpended"] > div.select2-container > a.select2-choice {
+#flexicontent [class^="fc-xpended"] select,
+#flexicontent [class^="fc-xpended"] select,
+#flexicontent [class^="fc-xpended"] div.select2-container > ul.select2-choices,
+#flexicontent [class^="fc-xpended"] div.select2-container > ul.select2-choices,
+#flexicontent [class^="fc-xpended"] div.select2-container > a.select2-choice,
+#flexicontent [class^="fc-xpended"] div.select2-container > a.select2-choice,
+#flexicontent [class*="fc-xpended"] select,
+#flexicontent [class*="fc-xpended"] select,
+#flexicontent [class*="fc-xpended"] div.select2-container > ul.select2-choices,
+#flexicontent [class*="fc-xpended"] div.select2-container > ul.select2-choices,
+#flexicontent [class*="fc-xpended"] div.select2-container > a.select2-choice,
+#flexicontent [class*="fc-xpended"] div.select2-container > a.select2-choice {
 	border-top-left-radius: 6px;
 	border-bottom-left-radius: 6px;
 	border-top-right-radius: 6px;
@@ -1093,50 +1149,50 @@ body .fc-nowrap-box,
 	vertical-align: top;
 	font-size: 13px;
 }
-#flexicontent [class^="fc-xpended"] > fieldset > label.btn:first-of-type,
-#flexicontent [class^="fc-xpended"] > fieldset > label.btn:first-of-type,
-#flexicontent [class^="fc-xpended"] > select:not(:first-child),
-#flexicontent [class^="fc-xpended"] > select:not(:first-child),
-#flexicontent [class^="fc-xpended"] > div.select2-container:not(:first-child) > ul.select2-choices,
-#flexicontent [class^="fc-xpended"] > div.select2-container:not(:first-child) > ul.select2-choices,
-#flexicontent [class^="fc-xpended"] > div.select2-container:not(:first-child) > a.select2-choice,
-#flexicontent [class^="fc-xpended"] > div.select2-container:not(:first-child) > a.select2-choice,
-#flexicontent [class*="fc-xpended"] > fieldset > label.btn:first-of-type,
-#flexicontent [class*="fc-xpended"] > fieldset > label.btn:first-of-type,
-#flexicontent [class*="fc-xpended"] > select:not(:first-child),
-#flexicontent [class*="fc-xpended"] > select:not(:first-child),
-#flexicontent [class*="fc-xpended"] > div.select2-container:not(:first-child) > ul.select2-choices,
-#flexicontent [class*="fc-xpended"] > div.select2-container:not(:first-child) > ul.select2-choices,
-#flexicontent [class*="fc-xpended"] > div.select2-container:not(:first-child) > a.select2-choice,
-#flexicontent [class*="fc-xpended"] > div.select2-container:not(:first-child) > a.select2-choice {
+#flexicontent [class^="fc-xpended"] fieldset > label.btn:first-of-type,
+#flexicontent [class^="fc-xpended"] fieldset > label.btn:first-of-type,
+#flexicontent [class^="fc-xpended"] select:not(:first-child),
+#flexicontent [class^="fc-xpended"] select:not(:first-child),
+#flexicontent [class^="fc-xpended"] div.select2-container:not(:first-child) > ul.select2-choices,
+#flexicontent [class^="fc-xpended"] div.select2-container:not(:first-child) > ul.select2-choices,
+#flexicontent [class^="fc-xpended"] div.select2-container:not(:first-child) > a.select2-choice,
+#flexicontent [class^="fc-xpended"] div.select2-container:not(:first-child) > a.select2-choice,
+#flexicontent [class*="fc-xpended"] fieldset > label.btn:first-of-type,
+#flexicontent [class*="fc-xpended"] fieldset > label.btn:first-of-type,
+#flexicontent [class*="fc-xpended"] select:not(:first-child),
+#flexicontent [class*="fc-xpended"] select:not(:first-child),
+#flexicontent [class*="fc-xpended"] div.select2-container:not(:first-child) > ul.select2-choices,
+#flexicontent [class*="fc-xpended"] div.select2-container:not(:first-child) > ul.select2-choices,
+#flexicontent [class*="fc-xpended"] div.select2-container:not(:first-child) > a.select2-choice,
+#flexicontent [class*="fc-xpended"] div.select2-container:not(:first-child) > a.select2-choice {
 	border-top-left-radius: 0;
 	border-bottom-left-radius: 0;
 	margin-left: 0 !important;
 	margin-right: 0 !important;
 }
-#flexicontent [class^="fc-xpended"] > select:not(:last-child),
-#flexicontent [class^="fc-xpended"] > select:not(:last-child),
-#flexicontent [class^="fc-xpended"] > div.select2-container:nth-last-child(n+3) > ul.select2-choices,
-#flexicontent [class^="fc-xpended"] > div.select2-container:nth-last-child(n+3) > ul.select2-choices,
-#flexicontent [class^="fc-xpended"] > div.select2-container:nth-last-child(n+3) > a.select2-choice,
-#flexicontent [class^="fc-xpended"] > div.select2-container:nth-last-child(n+3) > a.select2-choice,
-#flexicontent [class*="fc-xpended"] > select:not(:last-child),
-#flexicontent [class*="fc-xpended"] > select:not(:last-child),
-#flexicontent [class*="fc-xpended"] > div.select2-container:nth-last-child(n+3) > ul.select2-choices,
-#flexicontent [class*="fc-xpended"] > div.select2-container:nth-last-child(n+3) > ul.select2-choices,
-#flexicontent [class*="fc-xpended"] > div.select2-container:nth-last-child(n+3) > a.select2-choice,
-#flexicontent [class*="fc-xpended"] > div.select2-container:nth-last-child(n+3) > a.select2-choice {
+#flexicontent [class^="fc-xpended"] select:not(:last-child),
+#flexicontent [class^="fc-xpended"] select:not(:last-child),
+#flexicontent [class^="fc-xpended"] div.select2-container:nth-last-child(n+3) > ul.select2-choices,
+#flexicontent [class^="fc-xpended"] div.select2-container:nth-last-child(n+3) > ul.select2-choices,
+#flexicontent [class^="fc-xpended"] div.select2-container:nth-last-child(n+3) > a.select2-choice,
+#flexicontent [class^="fc-xpended"] div.select2-container:nth-last-child(n+3) > a.select2-choice,
+#flexicontent [class*="fc-xpended"] select:not(:last-child),
+#flexicontent [class*="fc-xpended"] select:not(:last-child),
+#flexicontent [class*="fc-xpended"] div.select2-container:nth-last-child(n+3) > ul.select2-choices,
+#flexicontent [class*="fc-xpended"] div.select2-container:nth-last-child(n+3) > ul.select2-choices,
+#flexicontent [class*="fc-xpended"] div.select2-container:nth-last-child(n+3) > a.select2-choice,
+#flexicontent [class*="fc-xpended"] div.select2-container:nth-last-child(n+3) > a.select2-choice {
 	border-top-right-radius: 0;
 	border-bottom-right-radius: 0;
 	margin-right: 0 !important;
 }
-#flexicontent [class^="fc-xpended"] > div.select2-container .select2-input,
-#flexicontent [class*="fc-xpended"] > div.select2-container .select2-input {
+#flexicontent [class^="fc-xpended"] div.select2-container .select2-input,
+#flexicontent [class*="fc-xpended"] div.select2-container .select2-input {
 	border-radius: 4px;
 }
+#flexicontent [class^="fc-xpended"] .input-group-text.fc-lbl-inverted,
 #flexicontent [class^="fc-xpended"] .add-on.fc-lbl-inverted,
-#flexicontent [class^="fc-xpended"] .add-on.fc-lbl-inverted,
-#flexicontent [class*="fc-xpended"] .add-on.fc-lbl-inverted,
+#flexicontent [class*="fc-xpended"] .input-group-text.fc-lbl-inverted,
 #flexicontent [class*="fc-xpended"] .add-on.fc-lbl-inverted {
 	background: #555 none repeat scroll 0 0;
 	color: white;
@@ -1145,20 +1201,28 @@ body .fc-nowrap-box,
 	border: 1px solid gray;
 	font-size: 12px;
 }
+#flexicontent [class^="fc-xpended"] .input-group-text.fc-lbl-inverted.fc-lbl-padded,
 #flexicontent [class^="fc-xpended"] .add-on.fc-lbl-inverted.fc-lbl-padded,
+#flexicontent [class*="fc-xpended"] .input-group-text.fc-lbl-inverted.fc-lbl-padded,
 #flexicontent [class*="fc-xpended"] .add-on.fc-lbl-inverted.fc-lbl-padded {
 	padding-left: 12px;
 	padding-right: 12px;
 }
-#flexicontent [class^="fc-xpended"] > .btn-group,
+#flexicontent [class^="fc-xpended"] > .input-group-append > *,
+#flexicontent [class^="fc-xpended"] > .input-group-prepend > *,
 #flexicontent [class^="fc-xpended"] > .btn-group,
 #flexicontent [class^="fc-xpended"] > *:not(.btn-group):not(:first-child),
-#flexicontent [class^="fc-xpended"] > *:not(.btn-group):not(:first-child),
+#flexicontent [class*="fc-xpended"] > .input-group-append > *,
+#flexicontent [class*="fc-xpended"] > .input-group-prepend > *,
 #flexicontent [class*="fc-xpended"] > .btn-group,
-#flexicontent [class*="fc-xpended"] > .btn-group,
-#flexicontent [class*="fc-xpended"] > *:not(.btn-group):not(:first-child),
 #flexicontent [class*="fc-xpended"] > *:not(.btn-group):not(:first-child) {
 	margin: 0;
+}
+#flexicontent [class^="fc-xpended"] [class^="icon-"]::before,
+#flexicontent [class^="fc-xpended"] [class*=" icon-"]::before,
+#flexicontent [class*="fc-xpended"] [class^="icon-"]::before,
+#flexicontent [class*="fc-xpended"] [class*=" icon-"]::before {
+	margin: 0 8px 0 0;
 }
 .fc-icon-16:before {
 	font-size: 16px !important;
@@ -1236,7 +1300,7 @@ body .btn-group.fc-group > .statetoggler.btn.btn-small {
 	color: black;
 	font-size: 120%;
 }
-.fc-preview-btn .icon-screen {
+.fc-preview-btn:not(.active):not(:hover) .icon-screen {
 	color: darkcyan;
 }
 #flexicontent .fc-box,

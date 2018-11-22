@@ -90,7 +90,6 @@ body .fc-mssg.fc-info {
 	background: #F0F9FC url(../images/information.png) no-repeat;
 	background-position: 98% 50%;
 	background-position: calc(~"100% - 10px") 50%;
-	color: #292B2C;
 	border-color: #5BC0DE;
 	border-right: 10px solid #5BC0DE;
 }
@@ -152,8 +151,9 @@ div.statetoggler {
 	padding: 4px 4px;
 	display: inline-block;
 	width: auto;
-	line-height: 14px;
-	height: 14px;
+	line-height: 18px;
+	height: 18px;
+	box-sizing: content-box;
 
 	.icon-publish:before,
 	.icon-checkmark-2:before {
@@ -191,6 +191,8 @@ div.statetoggler {
 			text-align: right;
 			vertical-align: baseline;
 			cursor: pointer;
+			text-decoration: none;
+			position: relative;
 		}
 		> div.stateopener.ajax-loader {
 			background-position: center;
@@ -243,6 +245,7 @@ div.statetoggler {
 				min-width: auto;
 
 				background: none repeat scroll 0 0 transparent;
+				color: black;
 				outline: none;
 				text-decoration: none;
 				white-space: nowrap;
@@ -397,9 +400,12 @@ div.statetoggler {
  * Various Containers
  ********************/
 
-body .fc-iblock {
-	display: inline-block !important;  /* FORCED (this is the purpose of the class) */
+body .fc-iblock
+#flexicontent .fc-iblock,
+.flexicontent .fc-iblock {
+	display: inline-block;
 }
+
 body .fc-nowrap-box,
 #flexicontent .nowrap_box,
 .flexicontent .nowrap_box {
@@ -407,11 +413,21 @@ body .fc-nowrap-box,
 	vertical-align: top;
 	display: inline-block;
 	float: none;
+
+	.label {
+		vertical-align: top;
+	}
+	
+	/* avoid issue of box inside box */
+	.fc-nowrap-box,
+	.nowrap_box {
+		vertical-align: middle;
+		.label {
+			vertical-align: middle;
+		}
+	}
 }
-#flexicontent .nowrap_box .label,
-.flexicontent .nowrap_box .label {
-	vertical-align: top;
-}
+
 #flexicontent .filterbuttons_head .nowrap_box .label,
 .flexicontent .filterbuttons_head .nowrap_box .label {
 	vertical-align: middle;
@@ -462,14 +478,21 @@ body .fc-nowrap-box,
 	width: 100%;
 }
 
+#flexicontent .fc-xpended .input-group-text:first-child,
+#flexicontent .fc-xpended-row .input-group-text:first-child,
 #flexicontent .fc-xpended .add-on:first-child,
 #flexicontent .fc-xpended-row .add-on:first-child {
 	min-width: 150px;
 	float: right;
+	text-align: left;
 	margin: 0 0 0 0;
 	padding-right: 4px;
 	padding-left: 4px;
+	display: inline-block;
 }
+
+#flexicontent .fc-xpended .input-group-text.fc-lbl-short,
+#flexicontent .fc-xpended-row .input-group-text.fc-lbl-short,
 #flexicontent .fc-xpended .add-on.fc-lbl-short,
 #flexicontent .fc-xpended-row .add-on.fc-lbl-short {
 	min-width: unset;
@@ -477,13 +500,20 @@ body .fc-nowrap-box,
 
 #flexicontent [class^="fc-xpended"],
 #flexicontent [class*="fc-xpended"] {
-	/* FIX select2 choosen value not showing when used inside an append/prepend group */
-	> div.select2-container,
-	> div.select2-container {
-		vertical-align: top;
+	.input-group-text {
+		padding: 0px;
 	}
-	> div.select2-container .select2-choice > .select2-chosen,
-	> div.select2-container .select2-choice > .select2-chosen {
+
+	/* FIX select2 choosen value not showing when used inside an append/prepend group */
+	div.select2-container {
+		vertical-align: middle;
+		margin: 0;
+	}
+	div.select2-container:first-child .select2-choice .select2-arrow {
+		border-radius: 0;
+	}
+	div.select2-container .select2-choice > .select2-chosen,
+	div.select2-container .select2-choice > .select2-chosen {
 		font-size: 12px;
 		line-height: 26px;
 		min-height: 26px;
@@ -491,12 +521,12 @@ body .fc-nowrap-box,
 	}
 	
 	/* Force proper styling of selects inside an append/prepend group */
-	> select,
-	> select,
-	> div.select2-container > ul.select2-choices,
-	> div.select2-container > ul.select2-choices,
-	> div.select2-container > a.select2-choice,
-	> div.select2-container > a.select2-choice {
+	select,
+	select,
+	div.select2-container > ul.select2-choices,
+	div.select2-container > ul.select2-choices,
+	div.select2-container > a.select2-choice,
+	div.select2-container > a.select2-choice {
 		border-top-right-radius: 6px;
 		border-bottom-right-radius: 6px;
 		border-top-left-radius: 6px;
@@ -506,33 +536,34 @@ body .fc-nowrap-box,
 		font-size: 13px;
 	}
 	
-	> fieldset > label.btn:first-of-type,
-	> fieldset > label.btn:first-of-type,
-	> select:not(:first-child),
-	> select:not(:first-child),
-	> div.select2-container:not(:first-child) > ul.select2-choices,
-	> div.select2-container:not(:first-child) > ul.select2-choices,
-	> div.select2-container:not(:first-child) > a.select2-choice,
-	> div.select2-container:not(:first-child) > a.select2-choice {
+	fieldset > label.btn:first-of-type,
+	fieldset > label.btn:first-of-type,
+	select:not(:first-child),
+	select:not(:first-child),
+	div.select2-container:not(:first-child) > ul.select2-choices,
+	div.select2-container:not(:first-child) > ul.select2-choices,
+	div.select2-container:not(:first-child) > a.select2-choice,
+	div.select2-container:not(:first-child) > a.select2-choice {
 		border-top-right-radius: 0;
 		border-bottom-right-radius: 0;
 		margin-right: 0 !important;
 		margin-left: 0 !important;
 	}
-	> select:not(:last-child),
-	> select:not(:last-child),
-	> div.select2-container:nth-last-child(n+3) > ul.select2-choices,
-	> div.select2-container:nth-last-child(n+3) > ul.select2-choices,
-	> div.select2-container:nth-last-child(n+3) > a.select2-choice,
-	> div.select2-container:nth-last-child(n+3) > a.select2-choice {
+	select:not(:last-child),
+	select:not(:last-child),
+	div.select2-container:nth-last-child(n+3) > ul.select2-choices,
+	div.select2-container:nth-last-child(n+3) > ul.select2-choices,
+	div.select2-container:nth-last-child(n+3) > a.select2-choice,
+	div.select2-container:nth-last-child(n+3) > a.select2-choice {
 		border-top-left-radius: 0;
 		border-bottom-left-radius: 0;
 		margin-left: 0 !important;
 	}
-	> div.select2-container .select2-input {
+	div.select2-container .select2-input {
 		border-radius: 4px;
 	}
-	.add-on.fc-lbl-inverted,
+
+	.input-group-text.fc-lbl-inverted,
 	.add-on.fc-lbl-inverted {
 		background: #555 none repeat scroll 0 0;
 		color: white;
@@ -541,15 +572,22 @@ body .fc-nowrap-box,
 		border: 1px solid gray;
 		font-size: 12px;
 	}
+	.input-group-text.fc-lbl-inverted.fc-lbl-padded,
 	.add-on.fc-lbl-inverted.fc-lbl-padded {
 		padding-right: 12px;
 		padding-left: 12px;
 	}
+
+	> .input-group-append > *,
+	> .input-group-prepend > *,
 	> .btn-group,
-	> .btn-group,
-	> *:not(.btn-group):not(:first-child),
 	> *:not(.btn-group):not(:first-child) {
 		margin: 0;
+	}
+
+	[class^="icon-"]::before,
+	[class*=" icon-"]::before {
+		margin: 0 8px 0 0;
 	}
 }
 
@@ -638,7 +676,7 @@ body .btn-group.fc-group > .statetoggler.btn.btn-small {
 	color: black;
 	font-size: 120%;
 }
-.fc-preview-btn .icon-screen {
+.fc-preview-btn:not(.active):not(:hover) .icon-screen {
 	color: darkcyan;
 }
 
