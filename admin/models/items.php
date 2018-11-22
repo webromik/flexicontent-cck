@@ -619,13 +619,16 @@ class FlexicontentModelItems extends JModelLegacy
 			
 			$item_pros = false;
 			$extra_props = ($filter->field_type == 'radioimage' || $filter->field_type == 'checkboximage') ? array('image', 'valgrp', 'state') : array();
-			$elements = FlexicontentFields::indexedField_getElements($filter, $item=null, $extra_props, $item_pros, $create_filter=true);
-			
-			$filter->parameters->set( 'faceted_filter', 0 );
-			$filter->parameters->set( 'display_filter_as', 0 );
-			$filter->parameters->set( 'display_label_filter', -1 );
-			$filter->parameters->set( 'label_filter_css', 'add-on' );
-			$filter->parameters->set( 'filter_extra_attribs', ' onchange="document.adminForm.limitstart.value=0; Joomla.submitform()" ' );
+
+			$elements = FlexicontentFields::indexedField_getElements($filter, $item=null, $extra_props, $item_pros, $is_filter=true);
+
+			$filter->isfilter = 1;
+
+			$filter->parameters->set('faceted_filter', 0);
+			$filter->parameters->set('display_filter_as', 0);
+			$filter->parameters->set('display_label_filter', 0);
+			$filter->parameters->set('label_filter_css', 'add-on');
+			$filter->parameters->set('filter_extra_attribs', ' onchange="document.adminForm.limitstart.value=0; Joomla.submitform()" ');
 			
 			// Check for error during getting indexed field elements
 			if ( !$elements ) {
