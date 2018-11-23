@@ -4,7 +4,7 @@
  * @version         3.2
  *
  * @author          Emmanuel Danan, Georgios Papadakis, Yannick Berges, others, see contributor page
- * @link            http://www.flexicontent.com
+ * @link            https://flexicontent.org
  * @copyright       Copyright © 2017, FLEXIcontent team, All Rights Reserved
  * @license         http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  */
@@ -107,7 +107,7 @@ class plgFlexicontent_fieldsRelation_reverse extends FCField
 					return;
 				}
 
-				$field->html = '<input id="'.$elementid.'" name="'.$fieldname.'[]" type="hidden" value="'.$rel_item->id.'" />';
+				$field->html = '<input id="'.$elementid.'" name="'.$fieldname.'[]" type="hidden" value="'.(int) $rel_item->id.'" />';
 				$field->html .= '<div class="alert alert-success">'.JText::_($auto_relate_submit_mssg).' '.$rel_item->title.'</div>';
 				return;
 			}

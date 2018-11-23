@@ -47,11 +47,14 @@ class plgFlexicontent_fieldsPhonenumbers extends FCField
 		// ****************
 		// Number of values
 		// ****************
-		$multiple   = $use_ingroup || (int) $field->parameters->get( 'allow_multiple', 0 ) ;
-		$max_values = $use_ingroup ? 0 : (int) $field->parameters->get( 'max_values', 0 ) ;
-		$required   = $field->parameters->get( 'required', 0 ) ;
+		$multiple   = $use_ingroup || (int) $field->parameters->get('allow_multiple', 0);
+		$max_values = $use_ingroup ? 0 : (int) $field->parameters->get('max_values', 0);
+		$required   = (int) $field->parameters->get('required', 0);
 		$required   = $required ? ' required' : '';
-		$add_position = (int) $field->parameters->get( 'add_position', 3 ) ;
+		$add_position = (int) $field->parameters->get('add_position', 3);
+
+		// If we are multi-value and not inside fieldgroup then add the control buttons (move, delete, add before/after)
+		$add_ctrl_btns = !$use_ingroup && $multiple;
 
 
 		// **************
@@ -90,7 +93,7 @@ class plgFlexicontent_fieldsPhonenumbers extends FCField
 
 
 		// Initialise property with default value
-		if ( !$field->value ) {
+		if (!$field->value) {
 			$field->value = array();
 			$field->value[0] = array('label'=>'', 'cc'=>'', 'phone1'=>'', 'phone2'=>'', 'phone3'=>'');
 			$field->value[0] = serialize($field->value[0]);
@@ -103,13 +106,14 @@ class plgFlexicontent_fieldsPhonenumbers extends FCField
 		$fieldname = 'custom['.$field->name.']';
 		$elementid = 'custom_'.$field->name;
 
-		$js = "";
-		$css = "";
+		$js = '';
+		$css = '';
 
-		if ($multiple) // handle multiple records
+		// Handle multiple records
+		if ($multiple)
 		{
 			// Add the drag and drop sorting feature
-			if (!$use_ingroup) $js .= "
+			if ($add_ctrl_btns) $js .= "
 			jQuery(document).ready(function(){
 				jQuery('#sortables_".$field->id."').sortable({
 					handle: '.fcfield-drag-handle',
@@ -189,7 +193,7 @@ class plgFlexicontent_fieldsPhonenumbers extends FCField
 				";
 
 			// Add new element to sortable objects (if field not in group)
-			if (!$use_ingroup) $js .= "
+			if ($add_ctrl_btns) $js .= "
 				//jQuery('#sortables_".$field->id."').sortable('refresh');  // Refresh was done appendTo ?
 				";
 
@@ -242,7 +246,11 @@ class plgFlexicontent_fieldsPhonenumbers extends FCField
 			$add_here = '';
 			$add_here .= $add_position==2 || $add_position==3 ? '<span class="' . $add_on_class . ' fcfield-insertvalue fc_before ' . $font_icon_class . '" onclick="addField'.$field->id.'(null, jQuery(this).closest(\'ul\'), jQuery(this).closest(\'li\'), {insert_before: 1});" title="'.JText::_( 'FLEXI_ADD_BEFORE' ).'"></span> ' : '';
 			$add_here .= $add_position==1 || $add_position==3 ? '<span class="' . $add_on_class . ' fcfield-insertvalue fc_after ' . $font_icon_class . '"  onclick="addField'.$field->id.'(null, jQuery(this).closest(\'ul\'), jQuery(this).closest(\'li\'), {insert_before: 0});" title="'.JText::_( 'FLEXI_ADD_AFTER' ).'"></span> ' : '';
-		} else {
+		}
+
+		// Field not multi-value
+		else
+		{
 			$remove_button = '';
 			$move2 = '';
 			$add_here = '';
@@ -302,26 +310,26 @@ class plgFlexicontent_fieldsPhonenumbers extends FCField
 				<tr><td class="key">' .JText::_( 'PLG_FLEXICONTENT_FIELDS_PHONENUMBERS_PHONE_NUMBER' ). '</td><td>
 					<div class="nowrap_box">
 						'.($show_part_labels && $part1_lbl ? '<label class="label phonenum1-lbl" for="'.$elementid_n.'_phone1" >'.JText::_($part1_lbl).'</label><br/>' : '').'
-						<input class="phonenum1 fcfield_textval inlineval'.$allow_letters.$required.'" name="'.$fieldname_n.'[phone1]" id="'.$elementid_n.'_phone1" type="text" value="'.$value['phone1'].'" '.$phone1_attribs.' />
+						<input class="phonenum1 fcfield_textval inlineval'.$allow_letters.$required.'" name="'.$fieldname_n.'[phone1]" id="'.$elementid_n.'_phone1" type="text" value="'.htmlspecialchars($value['phone1'], ENT_COMPAT, 'UTF-8').'" '.$phone1_attribs.' />
 						'.($use_phone > 1 ? '-' : '').'
 					</div>
 
 					'.($use_phone >= 2 ? '
 					<div class="nowrap_box">
 						'.($show_part_labels && $part2_lbl ? '<label class="label phonenum2-lbl" for="'.$elementid_n.'_phone2" >'.JText::_($part2_lbl).'</label><br/>' : '').'
-						<input class="phonenum2 fcfield_textval inlineval'.$allow_letters.$required.'" name="'.$fieldname_n.'[phone2]" id="'.$elementid_n.'_phone2" type="text" value="'.$value['phone2'].'" '.$phone2_attribs.' />
+						<input class="phonenum2 fcfield_textval inlineval'.$allow_letters.$required.'" name="'.$fieldname_n.'[phone2]" id="'.$elementid_n.'_phone2" type="text" value="'.htmlspecialchars($value['phone2'], ENT_COMPAT, 'UTF-8').'" '.$phone2_attribs.' />
 						'.($use_phone > 2 ? '-' : '').'
 					</div>' : '').'
 
 					'.($use_phone > 2 ? '
 					<div class="nowrap_box">
 						'.($show_part_labels && $part3_lbl ? '<label class="label phonenum3-lbl" for="'.$elementid_n.'_phone3" >'.JText::_($part3_lbl).'</label><br/>' : '').'
-						<input class="phonenum3 fcfield_textval inlineval'.$allow_letters.$required.'" name="'.$fieldname_n.'[phone3]" id="'.$elementid_n.'_phone3" type="text" value="'.$value['phone3'].'" '.$phone3_attribs.' />
+						<input class="phonenum3 fcfield_textval inlineval'.$allow_letters.$required.'" name="'.$fieldname_n.'[phone3]" id="'.$elementid_n.'_phone3" type="text" value="'.htmlspecialchars($value['phone3'], ENT_COMPAT, 'UTF-8').'" '.$phone3_attribs.' />
 					</div>' : '').'
 				</td></tr>';
 
 			$field->html[] = '
-				'.($use_ingroup || !$multiple ? '' : '
+				'.(!$add_ctrl_btns ? '' : '
 				<div class="'.$input_grp_class.' fc-xpended-btns">
 					'.$move2.'
 					'.$remove_button.'
@@ -340,8 +348,12 @@ class plgFlexicontent_fieldsPhonenumbers extends FCField
 			if (!$multiple) break;  // multiple values disabled, break out of the loop, not adding further values even if the exist
 		}
 
-		if ($use_ingroup) { // do not convert the array to string if field is in a group
-		} else if ($multiple) { // handle multiple records
+		// Do not convert the array to string if field is in a group
+		if ($use_ingroup);
+
+		// Handle multiple records
+		elseif ($multiple)
+		{
 			$field->html = !count($field->html) ? '' :
 				'<li class="'.$value_classes.'">'.
 					implode('</li><li class="'.$value_classes.'">', $field->html).
@@ -353,7 +365,11 @@ class plgFlexicontent_fieldsPhonenumbers extends FCField
 						'.JText::_( 'FLEXI_ADD_VALUE' ).'
 					</span>
 				</div>';
-		} else {  // handle single values
+		}
+
+		// Handle single values
+		else
+		{
 			$field->html = '<div class="fcfieldval_container valuebox fcfieldval_container_'.$field->id.'">' . $field->html[0] .'</div>';
 		}
 	}

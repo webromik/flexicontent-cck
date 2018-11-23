@@ -4,12 +4,16 @@
  * @version         3.2
  *
  * @author          Emmanuel Danan, Georgios Papadakis, Yannick Berges, others, see contributor page
- * @link            http://www.flexicontent.com
+ * @link            https://flexicontent.org
  * @copyright       Copyright © 2017, FLEXIcontent team, All Rights Reserved
  * @license         http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  */
 
 defined( '_JEXEC' ) or die( 'Restricted access' );
+
+use Joomla\String\StringHelper;
+use Joomla\Utilities\ArrayHelper;
+
 JLoader::register('FCField', JPATH_ADMINISTRATOR . '/components/com_flexicontent/helpers/fcfield/parentfield.php');
 
 class plgFlexicontent_fieldsCoreprops extends FCField
@@ -343,7 +347,7 @@ class plgFlexicontent_fieldsCoreprops extends FCField
 			case 'language':
 				if ($props_type=='id')
 				{
-					JArrayHelper::toInteger($value);  // Sanitize filter values as integers
+					$value = ArrayHelper::toInteger($value);  // Sanitize filter values as integers
 				}
 
 				$filter->filter_colname     = $props_type;

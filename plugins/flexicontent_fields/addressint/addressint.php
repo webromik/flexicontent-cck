@@ -4,8 +4,8 @@
  * @version         3.2
  *
  * @author          Emmanuel Danan, Georgios Papadakis, Yannick Berges, others, see contributor page
- * @link            http://www.flexicontent.com
- * @copyright       Copyright © 2017, FLEXIcontent team, All Rights Reserved
+ * @link            https://flexicontent.org
+ * @copyright       Copyright Â© 2017, FLEXIcontent team, All Rights Reserved
  * @license         http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  */
 
@@ -58,14 +58,18 @@ class plgFlexicontent_fieldsAddressint extends FCField
 		$font_icon_class = $form_font_icons ? ' fcfont-icon' : '';
 
 
-		// ****************
-		// Number of values
-		// ****************
-		$multiple   = $use_ingroup || (int) $field->parameters->get( 'allow_multiple', 0 ) ;
-		$max_values = $use_ingroup ? 0 : (int) $field->parameters->get( 'max_values', 0 ) ;
-		$required = (int) $field->parameters->get('required', 0);
+		// ***
+		// *** Number of values
+		// ***
+
+		$multiple   = $use_ingroup || (int) $field->parameters->get('allow_multiple', 0);
+		$max_values = $use_ingroup ? 0 : (int) $field->parameters->get('max_values', 0);
+		$required   = (int) $field->parameters->get('required', 0);
 		$required_class = $required ? 'required' : '';
-		$add_position = (int) $field->parameters->get( 'add_position', 3 ) ;
+		$add_position = (int) $field->parameters->get('add_position', 3);
+
+		// If we are multi-value and not inside fieldgroup then add the control buttons (move, delete, add before/after)
+		$add_ctrl_btns = !$use_ingroup && $multiple;
 
 
 		// Initialise value property
@@ -172,10 +176,8 @@ class plgFlexicontent_fieldsAddressint extends FCField
 		foreach($ac_type_allowed_list as $ac_type)
 		{
 			$lbl = $list_ac_types[$ac_type];
-			$ac_type_options .= '<option value="'.$ac_type.'"  '.($ac_type == $ac_types_default ? 'selected="selected"' : '').'>'.JText::_($lbl)."</option>\n";
+			$ac_type_options .= '<option value="'.htmlspecialchars($ac_type, ENT_COMPAT, 'UTF-8').'"  '.($ac_type == $ac_types_default ? 'selected="selected"' : '').'>'.JText::_($lbl)."</option>\n";
 		}
-		//echo $ac_type_options; exit;
-
 
 		// CSS classes of value container
 		$value_classes  = 'fcfieldval_container valuebox fcfieldval_container_'.$field->id;
@@ -183,22 +185,24 @@ class plgFlexicontent_fieldsAddressint extends FCField
 		// Field name and HTML TAG id
 		$fieldname = 'custom['.$field->name.']';
 		$elementid = 'custom_'.$field->name;
+		$field_name_js = str_replace('-', '_', $field->name);
 
 
 		// JS data of current field
 		$js = '
-			fcfield_addrint.allowed_countries["'.$field->name.'"] = new Array('.(count($ac_country_allowed_list) ? '"' . implode('", "', $ac_country_allowed_list) . '"' : '').');
-			fcfield_addrint.single_country["'.$field->name.'"] = "'.$single_country.'";
+			fcfield_addrint.allowed_countries["'.$field_name_js.'"] = new Array('.(count($ac_country_allowed_list) ? '"' . implode('", "', $ac_country_allowed_list) . '"' : '').');
+			fcfield_addrint.single_country["'.$field_name_js.'"] = "'.$single_country.'";
 
-			fcfield_addrint.map_zoom["'.$field->name.'"] = '.$map_zoom.';
-			fcfield_addrint.map_type["'.$field->name.'"] = "'.strtoupper($map_type).'";
+			fcfield_addrint.map_zoom["'.$field_name_js.'"] = '.$map_zoom.';
+			fcfield_addrint.map_type["'.$field_name_js.'"] = "'.strtoupper($map_type).'";
 		';
-		$css = "";
+		$css = '';
 
-		if ($multiple) // handle multiple records
+		// Handle multiple records
+		if ($multiple)
 		{
 			// Add the drag and drop sorting feature
-			if (!$use_ingroup) $js .= "
+			if ($add_ctrl_btns) $js .= "
 			jQuery(document).ready(function(){
 				jQuery('#sortables_".$field->id."').sortable({
 					handle: '.fcfield-drag-handle',
@@ -406,7 +410,7 @@ class plgFlexicontent_fieldsAddressint extends FCField
 				";
 
 			// Add new element to sortable objects (if field not in group)
-			if (!$use_ingroup) $js .= "
+			if ($add_ctrl_btns) $js .= "
 				//jQuery('#sortables_".$field->id."').sortable('refresh');  // Refresh was done appendTo ?
 				";
 
@@ -421,11 +425,12 @@ class plgFlexicontent_fieldsAddressint extends FCField
 				newField.find('.hasPopover').popover({html: true, container: newField, trigger : 'hover focus'});
 
 				// Initialize gmaps search autocomplete
-				fcfield_addrint.initAutoComplete('".$elementid."_'+uniqueRowNum".$field->id.", '".$field->name."');
+				fcfield_addrint.initAutoComplete('".$elementid."_'+uniqueRowNum".$field->id.", '".$field_name_js."');
 
 				rowCount".$field->id."++;       // incremented / decremented
 				uniqueRowNum".$field->id."++;   // incremented only
 			}
+
 
 			function deleteField".$field->id."(el, groupval_box, fieldval_box)
 			{
@@ -464,7 +469,11 @@ class plgFlexicontent_fieldsAddressint extends FCField
 			$add_here = '';
 			$add_here .= $add_position==2 || $add_position==3 ? '<span class="' . $add_on_class . ' fcfield-insertvalue fc_before ' . $font_icon_class . '" onclick="addField'.$field->id.'(null, jQuery(this).closest(\'ul\'), jQuery(this).closest(\'li\'), {insert_before: 1});" title="'.JText::_( 'FLEXI_ADD_BEFORE' ).'"></span> ' : '';
 			$add_here .= $add_position==1 || $add_position==3 ? '<span class="' . $add_on_class . ' fcfield-insertvalue fc_after ' . $font_icon_class . '"  onclick="addField'.$field->id.'(null, jQuery(this).closest(\'ul\'), jQuery(this).closest(\'li\'), {insert_before: 0});" title="'.JText::_( 'FLEXI_ADD_AFTER' ).'"></span> ' : '';
-		} else {
+		}
+
+		// Field not multi-value
+		else
+		{
 			$remove_button = '';
 			$move2 = '';
 			$add_here = '';
@@ -472,7 +481,9 @@ class plgFlexicontent_fieldsAddressint extends FCField
 			$css .= '';
 		}
 
-			$js .= "
+
+		// Added field's custom CSS / JS
+		$js .= "
 			function enableField".$field->id."(el, groupval_box, fieldval_box)
 			{
 				// Find field value container
@@ -540,7 +551,7 @@ class plgFlexicontent_fieldsAddressint extends FCField
 		// *** Create field's HTML display for item form
 		// ***
 
-		$field->html = array();  // Make sure this is an array
+		$field->html = array();
 
 		// Render form field
 		$formlayout = $field->parameters->get('formlayout', '');
@@ -555,7 +566,7 @@ class plgFlexicontent_fieldsAddressint extends FCField
 		foreach($field->html as $n => & $_html_)
 		{
 			$_html_ = '
-				'.($use_ingroup || !$multiple ? '' : '
+				'.(!$add_ctrl_btns ? '' : '
 				<div class="'.$input_grp_class.' fc-xpended-btns">
 					'.$move2.'
 					'.$remove_button.'
@@ -568,8 +579,12 @@ class plgFlexicontent_fieldsAddressint extends FCField
 		}
 		unset($_html_);
 
-		if ($use_ingroup) { // do not convert the array to string if field is in a group
-		} else if ($multiple) { // handle multiple records
+		// Do not convert the array to string if field is in a group
+		if ($use_ingroup);
+
+		// Handle multiple records
+		elseif ($multiple)
+		{
 			$field->html = !count($field->html) ? '' :
 				'<li class="'.$value_classes.'">'.
 					implode('</li><li class="'.$value_classes.'">', $field->html).
@@ -581,7 +596,11 @@ class plgFlexicontent_fieldsAddressint extends FCField
 						'.JText::_( 'FLEXI_ADD_VALUE' ).'
 					</span>
 				</div>';
-		} else {  // handle single values
+		}
+
+		// Handle single values
+		else
+		{
 			$field->html = '<div class="fcfieldval_container valuebox fcfieldval_container_'.$field->id.'">' . $field->html[0] .'</div>';
 		}
 	}
@@ -614,6 +633,7 @@ class plgFlexicontent_fieldsAddressint extends FCField
 	}*/
 
 
+	// Method to handle field's values before they are saved into the DB
 	function onBeforeSaveField( &$field, &$post, &$file, &$item )
 	{
 		if ( !in_array($field->field_type, static::$field_types) ) return;
