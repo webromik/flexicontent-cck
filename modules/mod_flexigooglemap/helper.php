@@ -18,18 +18,6 @@
 // no direct access
 defined('_JEXEC') or die('Restricted access');
 
-if (!defined('DS'))  define('DS',DIRECTORY_SEPARATOR);
-require_once (JPATH_ADMINISTRATOR.DS.'components'.DS.'com_flexicontent'.DS.'defineconstants.php');
-require_once (JPATH_SITE.DS.'components'.DS.'com_flexicontent'.DS.'helpers'.DS.'route.php');
-
-require_once (JPATH_SITE.DS.'components'.DS.'com_flexicontent'.DS.'classes'.DS.'flexicontent.helper.php');
-require_once (JPATH_SITE.DS.'components'.DS.'com_flexicontent'.DS.'classes'.DS.'flexicontent.fields.php');
-require_once (JPATH_SITE.DS.'components'.DS.'com_flexicontent'.DS.'classes'.DS.'flexicontent.categories.php');
-
-//JTable::addIncludePath(JPATH_ADMINISTRATOR.DS.'components'.DS.'com_flexicontent'.DS.'tables');
-require_once (JPATH_SITE.DS.'components'.DS.'com_flexicontent'.DS.'models'.DS.'item.php');
-
-
 class modFlexigooglemapHelper
 {
 	public static function getItemsLocations(&$params)
@@ -118,8 +106,10 @@ class modFlexigooglemapHelper
 				if ( !isset($coord['lat']) || !isset($coord['lon']) ) continue;    // skip empty value
 
 				$title = rtrim( addslashes($itemLoc->title) );
-
 				$link = '';
+				$addr = '';
+				$linkdirection = '';
+
 				if ($uselink)
 				{
 					$link = $itemLoc->link;
@@ -127,7 +117,6 @@ class modFlexigooglemapHelper
 					$link = addslashes($link);
 				}
 
-				$addr = '';
 				if ($useadress && !empty($coord['addr_display']))
 				{
 					$addr = '<p>'.$coord['addr_display'].'</p>';
@@ -135,12 +124,11 @@ class modFlexigooglemapHelper
 					$addr = preg_replace("/(\r\n|\n|\r)/", " ", $addr);
 				}
 
-				$linkdirection = '';
 				if ($usedirection)
 				{
 					// generate link to google maps directions
 					$map_link = empty($coord['url'])  ?  false  :  $coord['url'];
-					
+
 					// if no url, compatibility with old values
 					if (empty($map_link))
 					{
@@ -162,22 +150,38 @@ class modFlexigooglemapHelper
 					$linkdirection= '<div class="directions"><a href="' . $map_link . '" target="_blank" class="direction">' . $directionname . '</a></div>';
 				}
 
-				$contentwindows = $infotextmode  ?  $relitem_html  :  $addr .' '. $link;
+				$contentwindows = $infotextmode
+					? $relitem_html
+					: $addr . ' ' . $link;
 
 				$coordinates = $coord['lat'] .','. $coord['lon'];
 				$mapLocations[] = "['<h4 class=\"fleximaptitle\">$title</h4>$contentwindows $linkdirection'," . $coordinates . "]\r\n";
 			}
 		}
 
-		// Current category mode
+		// Current category mode or current item mode, these are pre-created (global variables)
 		else
 		{
-			// Get items of current view
-			global $fc_list_items;
-			if ( empty($fc_list_items) )
+			// Current category mode
+			if ($params->get('catidmode') == 1)
 			{
-				$fc_list_items = array();
+				// Get items of current view
+				global $fc_list_items;
+				if ( empty($fc_list_items) )
+				{
+					$fc_list_items = array();
+				}
 			}
+
+			// Get current item
+			else
+			{
+				global $fc_view_item;
+				$fc_list_items = !empty($fc_view_item)
+					? array($fc_view_item)
+					: array();
+			}
+
 			foreach ($fc_list_items as $address)
 			{
 				// Skip item if it has no address value
@@ -187,63 +191,67 @@ class modFlexigooglemapHelper
 				}
 
 				// Get first value, typically this is value [0], and unserialize it
-				$coord = reset($address->fieldvalues[$fieldaddressid]);
-				$coord = flexicontent_db::unserialize_array($coord, false, false);
-				if (!$coord) continue;
-
-				// Skip value that has no cordinates
-				if ( !isset($coord['lat']) || !isset($coord['lon']) ) continue;
-				if ( !strlen($coord['lat']) || !strlen($coord['lon']) ) continue;
-
-				$title = addslashes($address->title);
-
-				$link = '';
-				if ($uselink)
+				foreach($address->fieldvalues[$fieldaddressid] as $coord)
 				{
-					$link = JRoute::_(FlexicontentHelperRoute::getItemRoute($address->id, $address->catid, $forced_itemid, $address));
-					$link = '<p class="link"><a href="'.$link.'" target="'.$linkmode.'">' . $readmore . '</a></p>';
-					$link = addslashes($link);
-				}
+					$coord = flexicontent_db::unserialize_array($coord, false, false);
+					if (!$coord) continue;
 
-				$addr = '';
-				if ($useadress && !empty($coord['addr_display']))
-				{
-					$addr = '<p>'.$coord['addr_display'].'</p>';
-					$addr = addslashes($addr);
-					$addr = preg_replace("/(\r\n|\n|\r)/", " ", $addr);
-				}
+					// Skip value that has no cordinates
+					if ( !isset($coord['lat']) || !isset($coord['lon']) ) continue;
+					if ( !strlen($coord['lat']) || !strlen($coord['lon']) ) continue;
 
-				$linkdirection = '';
-				if ($usedirection)
-				{
-					// generate link to google maps directions
-					$map_link = empty($coord['url'])  ?  false  :  $coord['url'];
-					
-					// if no url, compatibility with old values
-					if (empty($map_link))
+					$title = addslashes($address->title);
+					$link = '';
+					$addr = '';
+					$linkdirection = '';
+
+					if ($uselink)
 					{
-						$map_link = "http://maps.google.com/maps?q=";
-						if (!empty($coord['addr1']) && !empty($coord['city']) && (!empty($coord['province']) || !empty($coord['state']))  && !empty($coord['zip']))
-						{
-							$map_link .= urlencode(($coord['addr1'] ? $coord['addr1'].',' : '')
-								.($coord['city'] ? $coord['city'].',' : '')
-								.($coord['state'] ? $coord['state'].',' : ($coord['province'] ? $coord['province'].',' : ''))
-								.($coord['zip'] ? $coord['zip'].',' : '')
-								.($coord['country'] ? JText::_('PLG_FC_ADDRESSINT_CC_'.$coord['country']) : ''));
-						}
-						else
-						{
-							$map_link .= urlencode($coord['lat'] . "," . $coord['lon']); 
-						}
+						$link = JRoute::_(FlexicontentHelperRoute::getItemRoute($address->id, $address->catid, $forced_itemid, $address));
+						$link = '<p class="link"><a href="'.$link.'" target="'.$linkmode.'">' . $readmore . '</a></p>';
+						$link = addslashes($link);
 					}
 
-					$linkdirection= '<div class="directions"><a href="' . $map_link . '" target="_blank" class="direction">' . $directionname . '</a></div>';
+					if ($useadress && !empty($coord['addr_display']))
+					{
+						$addr = '<p>'.$coord['addr_display'].'</p>';
+						$addr = addslashes($addr);
+						$addr = preg_replace("/(\r\n|\n|\r)/", " ", $addr);
+					}
+
+					if ($usedirection)
+					{
+						// generate link to google maps directions
+						$map_link = empty($coord['url'])  ?  false  :  $coord['url'];
+
+						// if no url, compatibility with old values
+						if (empty($map_link))
+						{
+							$map_link = "http://maps.google.com/maps?q=";
+							if (!empty($coord['addr1']) && !empty($coord['city']) && (!empty($coord['province']) || !empty($coord['state']))  && !empty($coord['zip']))
+							{
+								$map_link .= urlencode(($coord['addr1'] ? $coord['addr1'].',' : '')
+									.($coord['city'] ? $coord['city'].',' : '')
+									.($coord['state'] ? $coord['state'].',' : ($coord['province'] ? $coord['province'].',' : ''))
+									.($coord['zip'] ? $coord['zip'].',' : '')
+									.($coord['country'] ? JText::_('PLG_FC_ADDRESSINT_CC_'.$coord['country']) : ''));
+							}
+							else
+							{
+								$map_link .= urlencode($coord['lat'] . "," . $coord['lon']); 
+							}
+						}
+
+						$linkdirection= '<div class="directions"><a href="' . $map_link . '" target="_blank" class="direction">' . $directionname . '</a></div>';
+					}
+
+					$contentwindows = $infotextmode
+						? $relitem_html
+						: $addr . ' ' . $link;
+
+					$coordinates = $coord['lat'] .','. $coord['lon'];
+					$mapLocations[] = "['<h4 class=\"fleximaptitle\">$title</h4>$contentwindows $linkdirection'," . $coordinates . "]\r\n";
 				}
-
-				$contentwindows = $infotextmode  ?  $relitem_html  :  $addr .' '. $link;
-
-				$coordinates = $coord['lat'] .','. $coord['lon'];
-				$mapLocations[] = "['<h4 class=\"fleximaptitle\">$title</h4>$contentwindows $linkdirection'," . $coordinates . "]\r\n";
 			}
 		}
 

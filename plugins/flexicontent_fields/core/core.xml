@@ -1126,6 +1126,10 @@
 
 			<field name="" type="separator" default="FLEXI_FIELD_VOTE_AVERAGE_RATING" description="FLEXI_FIELD_VOTE_AVERAGE_RATING_DESC" level="level1" />
 			<field name="main_label" type="text" default="FLEXI_VOTE_AVERAGE_RATING" size="30" label="FLEXI_FIELD_VOTE_AVERAGE_RATING_LABEL" description="FLEXI_FIELD_VOTE_AVERAGE_RATING_LABEL_DESC" />		
+
+			<field name="rating_texts" type="textarea" filter="string"
+				default="" hint="FLEXI_VOTE_VERY_POOR,&#13;FLEXI_VOTE_POOR,&#13;FLEXI_VOTE_FAIR,&#13;FLEXI_VOTE_GOOD,&#13;FLEXI_VOTE_EXCELLENT"
+				rows="5" cols="30" label="FLEXI_FIELD_VOTE_RATING_SCALE_TEXTS" description="FLEXI_FIELD_VOTE_RATING_SCALE_TEXTS_DESC" class="" depend_class="composite-voting-mode"/>
 			<field name="main_counter" type="radio" default="1" label="FLEXI_FIELD_VOTE_SHOW_COUNTER" description="FLEXI_FIELD_VOTE_SHOW_COUNTER_DESC" class="btn-group btn-group-yesno">
 				<option value="0">FLEXI_DISABLE</option>
 				<option value="1">FLEXI_ENABLE</option>

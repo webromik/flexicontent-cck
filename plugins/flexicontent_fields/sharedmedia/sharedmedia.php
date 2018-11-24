@@ -87,7 +87,8 @@ class plgFlexicontent_fieldsSharedmedia extends FCField
 		//	$api_key_desc = JText::_('PLG_FLEXICONTENT_FIELDS_SHARED'.$_MEDIA_.'_EMBEDLY_API_KEY_DESC');
 		//	$error_text = JText::sprintf('PLG_FLEXICONTENT_FIELDS_SHARED'.$_MEDIA_.'_API_KEY_REQUIRED', $api_key_name) ." <br/> ". $api_key_desc;
 		//}
-		if( empty($youtube_key) && $use_native_apis ) {
+		if (empty($youtube_key) && $use_native_apis)
+		{
 			$api_key_name = JText::_('PLG_FLEXICONTENT_FIELDS_SHARED'.$_MEDIA_.'_YOUTUBE_API_KEY');
 			$api_key_desc = JText::_('PLG_FLEXICONTENT_FIELDS_SHARED'.$_MEDIA_.'_YOUTUBE_API_KEY_DESC');
 			$error_text = JText::sprintf('PLG_FLEXICONTENT_FIELDS_SHARED'.$_MEDIA_.'_API_KEY_REQUIRED', $api_key_name) ." <br/> ". $api_key_desc;
@@ -164,12 +165,15 @@ class plgFlexicontent_fieldsSharedmedia extends FCField
 				var newField  = lastField.clone();
 				newField.find('.fc-has-value').removeClass('fc-has-value');
 
+				// New element's field name and id
+				var element_id = '".$elementid . "_' + uniqueRowNum".$field->id.";
+
 				// First, generate new field as HTML
 				//var newField_HTML = lastField.prop('outerHTML');
 
 				// replace all field names and ids
 				//newField_HTML = newField_HTML.replace(/" . str_replace(array('[', ']'), array('\[', '\]'), $fieldname) . "\[(\d*)\]/g, '" . $fieldname . "[' + uniqueRowNum".$field->id." + ']');
-				//newField_HTML = newField_HTML.replace(/" . $elementid . "_(\d*)/g, '" . $elementid . "_' + uniqueRowNum".$field->id.");
+				//newField_HTML = newField_HTML.replace(/" . $elementid . "_(\d*)/g, element_id);
 
 				// Convert HTML to DOM element
 				//var newField = jQuery(newField_HTML);
@@ -179,12 +183,12 @@ class plgFlexicontent_fieldsSharedmedia extends FCField
 					theInput = newField.find('.' + elements[i]).first();
 					var el_name = elements[i].replace(/^sm_/, '');
 					theInput.attr('name','".$fieldname."['+uniqueRowNum".$field->id."+']['+el_name+']');
-					theInput.attr('id','".$elementid."_'+uniqueRowNum".$field->id."+'_'+el_name);
+					theInput.attr('id', element_id + '_' + el_name);
 				}
-				newField.find('.sm_preview').attr('id','".$elementid."_'+uniqueRowNum".$field->id."+'_preview');
-				newField.find('.sm_fetch_btn').attr('onclick','fetchData_".$field_name_js."(\'".$elementid."_'+uniqueRowNum".$field->id."+'\')');
-				newField.find('.sm_clear_btn').attr('onclick','clearData_".$field_name_js."(\'".$elementid."_'+uniqueRowNum".$field->id."+'\')');
-				newField.find('.fcfield_sm_mssg').attr('id','fcfield_sm_mssg_".$elementid."_'+uniqueRowNum".$field->id.");
+				newField.find('.sm_preview').attr('id', element_id + '_preview');
+				newField.find('.sm_fetch_btn').attr('onclick','fetchData_".$field_name_js."(\'' + element_id + '\')');
+				newField.find('.sm_clear_btn').attr('onclick','clearData_".$field_name_js."(\'' + element_id + '\')');
+				newField.find('.fcfield_sm_mssg').attr('id', 'fcfield_sm_mssg_' + element_id);
 				";
 
 			// Add new field to DOM
@@ -200,8 +204,6 @@ class plgFlexicontent_fieldsSharedmedia extends FCField
 
 				// Extra actions after adding element to the DOM
 			$js .= "
-				var element_id = '".$elementid . "_' + uniqueRowNum".$field->id.";
-
 				// Clear any existing message
 				jQuery('#fcfield_sm_mssg_' + element_id).html('');
 

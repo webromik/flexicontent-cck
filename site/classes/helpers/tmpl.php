@@ -501,7 +501,7 @@ class flexicontent_tmpl
 	 * @access public
 	 * @return object
 	 */
-	static function validateLayoutData($raw_data, $params, $layout=array('type'=>'item', 'name'=>'default', 'fset'=>'attribs'))
+	static function validateLayoutData($raw_data, $params, $layout = array('type'=>'item', 'name'=>'default', 'fset'=>'attribs'))
 	{
 		$layout_data = array( $layout->fset => array() );
 		$layout = !is_object($layout) ? (object) $layout : $layout;
@@ -540,9 +540,10 @@ class flexicontent_tmpl
 		// Filter and validate the resulting data
 		$layout_data = $jform->filter($layout_data);
 		$isValid = $jform->validate($layout_data, $layout->fset);
+
 		if (!$isValid)
 		{
-			JFactory::getApplication()->enqueueMessage('Error validating layout parameters. Layout parameters were not saved', 'warning');
+			JFactory::getApplication()->enqueueMessage('Skipped saving of layout parameters. <br/> Error during their validation (invalid field value or required field value missing).', 'warning');
 		}
 
 		return $layout_data[$layout->fset];
@@ -557,9 +558,9 @@ class flexicontent_tmpl
 		}
 
 		// Layout variables
-		$layout_type = $options['layout_type'];
+		$layout_type  = $options['layout_type'];
 		$layout_param = $layout_type == 'item' ? 'ilayout' : 'clayout';
-		$layout_name = isset($data[$params_fset][$layout_param]) ? $data[$params_fset][$layout_param] : null;
+		$layout_name  = isset($data[$params_fset][$layout_param]) ? $data[$params_fset][$layout_param] : null;
 
 		// If no layout name , it means use layout data from "parent" e.g. item type or parent categories, just return empty array to clear all layout data
 		if (!$layout_name)
@@ -576,7 +577,11 @@ class flexicontent_tmpl
 			: array();
 
 		// Validate and return the layout field data. NOTE: new layout data are merged into existing layout data, and then all together are validated)
-		$layout = (object) array('type'=>$layout_type, 'name'=>$layout_name, 'fset'=>'attribs');
+		$layout = (object) array(
+			'type' => $layout_type,
+			'name' => $layout_name,
+			'fset' => 'attribs',
+		);
 		return flexicontent_tmpl::validateLayoutData($layout_data, $record_params, $layout);
 	}
 }
