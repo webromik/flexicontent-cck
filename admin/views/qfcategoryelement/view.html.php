@@ -48,11 +48,11 @@ class FlexicontentViewQfcategoryelement extends JViewLegacy
 
 		$assocs_id   = JRequest::getInt( 'assocs_id', 0 );
 		
-		$language    = !$assocs_id ? JRequest::getCmd('language') : $app->getUserStateFromRequest( $option.'.'.$view.'.language', 'language', '', 'string' );
-		$created_by  = !$assocs_id ? JRequest::getCmd('created_by') : $app->getUserStateFromRequest( $option.'.'.$view.'.created_by', 'created_by', 0, 'int' );
-		
 		if ($assocs_id)
 		{
+			$item_lang   = $app->getUserStateFromRequest( $option.'.'.$view.'.item_lang', 'item_lang', '', 'string' );
+			$created_by  = $app->getUserStateFromRequest( $option.'.'.$view.'.created_by', 'created_by', 0, 'int' );
+
 			$assocanytrans = $user->authorise('flexicontent.assocanytrans', 'com_flexicontent');
 			if (!$assocanytrans && !$created_by)  $created_by = $user->id;
 		}
@@ -65,7 +65,7 @@ class FlexicontentViewQfcategoryelement extends JViewLegacy
 		$filter_cats   = $app->getUserStateFromRequest( $option.'.'.$view.'.filter_cats',   'filter_cats',    0,     'int' );
 		$filter_level  = $app->getUserStateFromRequest( $option.'.'.$view.'.filter_level',  'filter_level',   0,     'int' );
 		$filter_access = $app->getUserStateFromRequest( $option.'.'.$view.'.filter_access', 'filter_access',  '',    'string' );
-		$filter_lang   = $app->getUserStateFromRequest( $option.'.'.$view.'.filter_lang',   'filter_lang',    '',    'cmd' );
+		$filter_lang   = $app->getUserStateFromRequest( $option.'.'.$view.'.filter_lang',   'filter_lang',    '',    'string' );
 		$filter_author = $app->getUserStateFromRequest( $option.'.'.$view.'.filter_author', 'filter_author',  '',    'cmd' );
 		
 		$search = $app->getUserStateFromRequest( $option.'.'.$view.'.search', 			'search', 			'', 'string' );
@@ -91,15 +91,21 @@ class FlexicontentViewQfcategoryelement extends JViewLegacy
 		//$document->addStyleSheet(JUri::base(true).'/templates/'.$template.(FLEXI_J16GE ? '/css/template.css': '/css/general.css'));
 		
 		//Get data from the model
-		$rows     = $this->get( 'Items');
+		$rows     = $this->get( 'Data');
 		$authors  = $this->get( 'Authorslist' );
+		$langs    = FLEXIUtilities::getLanguages('code');
 		$pagination = $this->get( 'Pagination' );
-		
+		$lang_assocs = $assocs_id ? $this->get( 'LangAssocs' ) : array();
+
+
 		// Ordering active FLAG
 		$ordering = ($filter_order == 'c.lft');
 		
 		// Parse configuration for every category
-   	foreach ($rows as $cat)  $cat->config = new JRegistry($cat->config);
+   	foreach ($rows as $cat)
+		{
+			$cat->config = new JRegistry($cat->params);
+		}
 		
 		
 		// *******************
@@ -157,19 +163,20 @@ class FlexicontentViewQfcategoryelement extends JViewLegacy
 		
 		// build language filter
 		$lists['filter_lang'] = '<label class="label">'.JText::_('FLEXI_LANGUAGE').'</label>'.
-			($assocs_id && $language ?
-				'<span class="badge badge-info">'.$language.'</span>' :
+			($assocs_id && $item_lang ?
+				'<span class="badge badge-info">'.$item_lang.'</span>' :
 				flexicontent_html::buildlanguageslist('filter_lang', 'class="use_select2_lib" onchange="document.adminForm.limitstart.value=0; Joomla.submitform()"', $filter_lang, '-'/*2*/)
 			);
 		
 		// assign data to template
 		$this->assocs_id = $assocs_id;
+		$this->langs = $langs;
 		$this->lists = $lists;
 		$this->rows = $rows;
 		$this->ordering = $ordering;
 		$this->pagination = $pagination;
+		$this->lang_assocs = $lang_assocs;
 
 		parent::display($tpl);
 	}
 }
-?>

@@ -866,6 +866,22 @@ div.statetoggler > div.statetoggler_inner > div.stateopener {
 	text-decoration: none;
 	position: relative;
 }
+div.statetoggler > div.statetoggler_inner > div.stateopener span.fc_expired,
+div.statetoggler > div.statetoggler_inner > div.stateopener span.fc_scheduled {
+	position: absolute;
+	left: -2px;
+	right: -2px;
+	top: 45%;
+	bottom: 35%;
+	border-top: 1px solid gray;
+	border-bottom: 1px solid gray;
+	opacity: 1;
+}
+div.statetoggler > div.statetoggler_inner > div.stateopener span.fc_expired + span:before,
+div.statetoggler > div.statetoggler_inner > div.stateopener span.fc_scheduled + span:before {
+	opacity: 0.4;
+	color: black;
+}
 div.statetoggler > div.statetoggler_inner > div.stateopener.ajax-loader {
 	background-position: center;
 	padding: 8px;
@@ -1339,6 +1355,35 @@ body .btn-group.fc-group > .statetoggler.btn.btn-small {
 	width: 100%;
 	margin: 0 0 8px 0;
 	text-align: right;
+}
+div span.fc_icon_disabled {
+	position: absolute;
+	left: -2px;
+	right: -2px;
+	top: 45%;
+	bottom: 35%;
+	opacity: 1;
+	width: 70%;
+	right: 15%;
+}
+div span.fc_icon_disabled + span:before {
+	color: gray;
+}
+div span.fc_icon_disabled.fc_icon_na {
+	border-top: 1px solid gray;
+	border-bottom: 1px solid gray;
+}
+*:not(:hover) > .fc-icon-orange:before {
+	color: darkorange !important;
+}
+*:not(:hover) > .fc-icon-red:before {
+	color: darkred !important;
+}
+*:not(:hover) > .fc-icon-green:before {
+	color: darkgreen !important;
+}
+*:not(:hover) > .fc-icon-gray:before {
+	color: lightgray !important;
 }
 input.fc-inherited-value + label {
 	font-weight: bold !important;

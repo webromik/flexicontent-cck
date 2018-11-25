@@ -50,7 +50,7 @@ class FlexicontentViewItemelement extends JViewLegacy
 		
 		if ($assocs_id)
 		{
-			$language    = $app->getUserStateFromRequest( $option.'.'.$view.'.language', 'language', '', 'string' );
+			$item_lang   = $app->getUserStateFromRequest( $option.'.'.$view.'.item_lang', 'item_lang', '', 'string' );
 			$type_id     = $app->getUserStateFromRequest( $option.'.'.$view.'.type_id', 'type_id', 0, 'int' );
 			$created_by  = $app->getUserStateFromRequest( $option.'.'.$view.'.created_by', 'created_by', 0, 'int' );
 			
@@ -162,8 +162,8 @@ class FlexicontentViewItemelement extends JViewLegacy
 		
 		// build language filter
 		$lists['filter_lang'] = '<label class="label">'.JText::_('FLEXI_LANGUAGE').'</label>'.
-			($assocs_id && $language ?
-				'<span class="badge badge-info">'.$language.'</span>' :
+			($assocs_id && $item_lang ?
+				'<span class="badge badge-info">'.$item_lang.'</span>' :
 				flexicontent_html::buildlanguageslist('filter_lang', 'class="use_select2_lib" onchange="document.adminForm.limitstart.value=0; Joomla.submitform()"', $filter_lang, '-'/*2*/)
 			);
 		
