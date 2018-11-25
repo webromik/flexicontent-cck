@@ -1180,6 +1180,7 @@ div.container_fcfield div.toggle_all_values_buttons_box {
 #flexicontent .fc-xpended-btns > .fcfield-enablevalue,
 #flexicontent .fc-xpended-btns > .fcfield-disablevalue,
 #flexicontent .fc-xpended-btns > .fcfield-clearvalue,
+#flexicontent .fc-xpended-btns > .fcfield-medialurlvalue,
 #flexicontent .fc-xpended-btns > .fcfield-selectvalue,
 #flexicontent .fc-xpended-btns > .fcfield-uploadvalue,
 #flexicontent .fc-xpended-btns > .fcfield-button,
@@ -1205,6 +1206,7 @@ div.container_fcfield div.toggle_all_values_buttons_box {
 #flexicontent .fc-xpended-btns > .fcfield-enablevalue:not(.add-on):not(.input-group-addon):not(.btn),
 #flexicontent .fc-xpended-btns > .fcfield-disablevalue:not(.add-on):not(.input-group-addon):not(.btn),
 #flexicontent .fc-xpended-btns > .fcfield-clearvalue:not(.add-on):not(.input-group-addon):not(.btn),
+#flexicontent .fc-xpended-btns > .fcfield-medialurlvalue:not(.add-on):not(.input-group-addon):not(.btn),
 #flexicontent .fc-xpended-btns > .fcfield-selectvalue:not(.add-on):not(.input-group-addon):not(.btn),
 #flexicontent .fc-xpended-btns > .fcfield-uploadvalue:not(.add-on):not(.input-group-addon):not(.btn),
 #flexicontent .fc-xpended-btns > .fcfield-button:not(.add-on):not(.input-group-addon):not(.btn),
@@ -1234,6 +1236,7 @@ div.container_fcfield div.toggle_all_values_buttons_box {
 #flexicontent .fc-xpended-btns .fcfield-enablevalue:not(.fcfont-icon):hover,
 #flexicontent .fc-xpended-btns .fcfield-disablevalue:not(.fcfont-icon):hover,
 #flexicontent .fc-xpended-btns .fcfield-clearvalue:not(.fcfont-icon):hover,
+#flexicontent .fc-xpended-btns .fcfield-medialurlvalue:not(.fcfont-icon):hover,
 #flexicontent .fc-xpended-btns .fcfield-selectvalue:not(.fcfont-icon):hover,
 #flexicontent .fc-xpended-btns .fcfield-uploadvalue:not(.fcfont-icon):hover,
 #flexicontent .fc-xpended-btns .fcfield-button:not(.fcfont-icon):hover,
@@ -1253,6 +1256,7 @@ div.container_fcfield div.toggle_all_values_buttons_box {
 #flexicontent .fc-xpended-btns .fcfield-enablevalue.fcfont-icon:hover,
 #flexicontent .fc-xpended-btns .fcfield-disablevalue.fcfont-icon:hover,
 #flexicontent .fc-xpended-btns .fcfield-clearvalue.fcfont-icon:hover,
+#flexicontent .fc-xpended-btns .fcfield-medialurlvalue.fcfont-icon:hover,
 #flexicontent .fc-xpended-btns .fcfield-selectvalue.fcfont-icon:hover,
 #flexicontent .fc-xpended-btns .fcfield-uploadvalue.fcfont-icon:hover,
 #flexicontent .fc-xpended-btns .fcfield-button.fcfont-icon:hover,
@@ -1274,6 +1278,7 @@ div.container_fcfield div.toggle_all_values_buttons_box {
 #flexicontent span.fcfield-enablevalue.fcfont-icon,
 #flexicontent span.fcfield-disablevalue.fcfont-icon,
 #flexicontent span.fcfield-clearvalue.fcfont-icon,
+#flexicontent span.fcfield-medialurlvalue.fcfont-icon,
 #flexicontent span.fcfield-selectvalue.fcfont-icon,
 #flexicontent span.fcfield-uploadvalue.fcfont-icon,
 #flexicontent span.fcfield-button.fcfont-icon,
@@ -1283,6 +1288,21 @@ div.container_fcfield div.toggle_all_values_buttons_box {
 }
 #flexicontent span.fcfield-expand-view.fcfont-icon {
 	padding: 0px;
+}
+#flexicontent span.fcfield-expand-view.fcfont-icon {
+	padding: 0px;
+}
+#flexicontent .buttons.btn-group .btn {
+	padding: 4px 6px;
+}
+#flexicontent .buttons.btn-group .btn .caret {
+	margin: 2px 0 4px 0;
+	vertical-align: middle;
+}
+#flexicontent .buttons.btn-group > ul.dropdown-menu > li > span {
+	display: block;
+	cursor: pointer;
+	user-select: none;
 }
 #flexicontent .fcfield-button-add {
 	vertical-align: top !important;
@@ -1366,6 +1386,7 @@ div.container_fcfield div.toggle_all_values_buttons_box {
 }
 #flexicontent span.fcfield-insertvalue.fc_after.fcfont-icon:before {
 	content: "]";
+	font-size: 8px !important;
 }
 #flexicontent span.fcfield-insertvalue.fc_before.fcfont-icon:before {
 	content: "\e207";
@@ -1375,10 +1396,11 @@ div.container_fcfield div.toggle_all_values_buttons_box {
 }
 #flexicontent span.fcfield-insertvalue.fc_before.fcfont-icon:after {
 	content: " ]";
+	font-size: 8px !important;
 }
 #flexicontent span.fcfield-insertvalue:before,
 #flexicontent span.fcfield-insertvalue:after {
-	color: LimeGreen;
+	color: #555;
 }
 #flexicontent .fcfield-expand-view {
 	background: url(../images/arrow-resize.png) 50% 50% no-repeat;
@@ -1440,6 +1462,16 @@ div.container_fcfield div.toggle_all_values_buttons_box {
 #flexicontent span.fcfield-clearvalue:before {
 	color: #555;
 }
+#flexicontent .fcfield-medialurlvalue {
+	margin: 0px 0px 2px 0px;
+	background: url(../images/layout.png) 50% 50% no-repeat;
+}
+#flexicontent span.fcfield-medialurlvalue.fcfont-icon:before {
+	content: "\e015";
+}
+#flexicontent span.fcfield-medialurlvalue:before {
+	color: #555;
+}
 #flexicontent .fcfield-selectvalue {
 	margin: 0px 0px 2px 0px;
 	background: url(../images/magnifier.png) 50% 50% no-repeat;
@@ -1498,6 +1530,15 @@ div.empty_image {
 	border: 1px solid silver;
 	margin-bottom: 3px;
 	word-wrap: break-word;
+}
+.fcfield-image-mediaurl-box div.fcfield-image-mediaurl-btns {
+	margin: 4px 2px !important;
+	width: 100%;
+}
+.fcfield-image-mediaurl-box div.fcfield-image-mediaurl-btns .img_fetch_btn,
+.fcfield-image-mediaurl-box div.fcfield-image-mediaurl-btns .img_clear_btn {
+	width: 50%;
+	box-sizing: border-box;
 }
 .fcimg_preview_box {
 	display: inline-block;

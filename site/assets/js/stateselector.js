@@ -13,27 +13,12 @@ var fc_state_icons = {
 	'1': 'publish',
 	'-5': 'checkmark-2',
 	'0': 'unpublish',
-	'-3': 'clock',
+	'-3': 'question',
 	'-4': 'pencil-2',
 	'2': 'archive',
 	'-2': 'trash',
 	'u': 'question-2'
 };
-var fc_state_descrs;
-
-jQuery(document).ready(function() {
-	fc_state_descrs = {
-		'1': Joomla.JText._('FLEXI_PUBLISH_THIS_ITEM'),
-		'-5': Joomla.JText._('FLEXI_SET_STATE_AS_IN_PROGRESS'),
-		'0': Joomla.JText._('FLEXI_UNPUBLISH_THIS_ITEM'),
-		'-3': Joomla.JText._('FLEXI_SET_STATE_AS_PENDING'),
-		'-4': Joomla.JText._('FLEXI_SET_STATE_AS_TO_WRITE'),
-		'2': Joomla.JText._('FLEXI_ARCHIVE_THIS_ITEM'),
-		'-2': Joomla.JText._('FLEXI_TRASH_THIS_ITEM'),
-		'u': Joomla.JText._('FLEXI_UNKNOWN')
-	};
-});
-
 
 var fc_statehandler = function(options)
 {
@@ -49,7 +34,7 @@ var fc_statehandler = function(options)
 		refresh_on_success: false
 	};
 	
-	if( typeof options !== 'undefined') for (var key in options)
+	if( typeof options != 'undefined') for (var key in options)
 	{
 		this.options[key] = options[key];  //window.console.log(key, options[key]);
 	};
@@ -68,14 +53,14 @@ var fc_statehandler = function(options)
 			url: this.options.script_url + '&task=' + this.options.task + '&id=' + id + '&state=' + state,
 			dataType: 'json',
 			data: {
-				lang: (typeof _FC_GET !='undefined' && 'lang' in _FC_GET ? _FC_GET['lang']: '')
+				lang: (typeof fc_sef_lang != 'undefined' ? fc_sef_lang : '')
 			},
 			success: function( data )
 			{
 				row.removeClass('ajax-loader').html(data.html);
 				toggler.attr('data-original-title', data.title);
 
-				if (typeof data.error !== 'undefined')
+				if (typeof data.error != 'undefined')
 				{
 					jQuery('#system-message-container').html(data.error);
 				}
@@ -103,6 +88,17 @@ var fc_statehandler = function(options)
 		var toggler = jQuery(el);
 		var ops = toggler.find('.options');
 
+		var fc_state_titles = typeof _fc_state_titles != 'undefined' ? _fc_state_titles : {
+			 '1': 'FLEXI_PUBLISH_THIS_ITEM',
+			'-5': 'FLEXI_SET_STATE_AS_IN_PROGRESS',
+			 '0': 'FLEXI_UNPUBLISH_THIS_ITEM',
+			'-3': 'FLEXI_SET_STATE_AS_PENDING',
+			 '-4': 'FLEXI_SET_STATE_AS_TO_WRITE',
+				'2': 'FLEXI_ARCHIVE_THIS_ITEM',
+			'-2': 'FLEXI_TRASH_THIS_ITEM',
+			 'u': 'FLEXI_UNKNOWN'
+		};
+
 		if ( ops.is(':hidden') )
 		{
 			this.active_selector_box = null;
@@ -112,13 +108,19 @@ var fc_statehandler = function(options)
 
 			if (ops.children().length == 0)
 			{
-				var html = '';//'<div>' + Joomla.JText._('FLEXI_ACTION') + '</div>';
-				var iid = ops.data('id');
+				var html = ''; //'<div>' + Joomla.JText._('FLEXI_ACTION') + '</div>';
+
+				var iid    = ops.data('id');
 				var states = ops.data('st');
-				jQuery(states).each(function(index, item){
+				var titles = ops.data('tt');
+
+				jQuery(states).each(function(index, item)
+				{
+					var action_text = (titles && !! titles[item.i]) ? (Joomla.JText._('FLEXI_SET_STATE_TO') + ' ' + titles[item.i]) : Joomla.JText._(fc_state_titles[item.i]);
+
 					html += fc_statehandler_singleton.options.font_icons
-						? '<span onclick="fc_statehandler_singleton.setState(\'' + item.i + '\', \'' + iid + '\')"><span class="icon-' + fc_state_icons[item.i] + '"></span>' + fc_state_descrs[item.i] + '</span>'
-						: '<span onclick="fc_statehandler_singleton.setState(\'' + item.i + '\', \'' + iid + '\')"><img src="' + fc_statehandler_singleton.options.img_path + fc_state_imgs[item.i] + '"/>' + fc_state_descrs[item.i] + '</span>';
+						? '<span onclick="fc_statehandler_singleton.setState(\'' + item.i + '\', \'' + iid + '\')"><span class="icon-' + fc_state_icons[item.i] + '"></span>' + action_text + '</span>'
+						: '<span onclick="fc_statehandler_singleton.setState(\'' + item.i + '\', \'' + iid + '\')"><img src="' + fc_statehandler_singleton.options.img_path + fc_state_imgs[item.i] + '"/>' + action_text + '</span>';
 				});
 				jQuery(html).appendTo(ops);
 			}

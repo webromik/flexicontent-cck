@@ -1,22 +1,15 @@
 <?php
 /**
- * @version 1.5 stable $Id: reviews.php 1655 2013-03-16 17:55:25Z ggppdk $
- * @package Joomla
- * @subpackage FLEXIcontent
- * @copyright (C) 2009 Emmanuel Danan - www.vistamedia.fr
- * @license GNU/GPL v2
+ * @package         FLEXIcontent
+ * @version         3.3
  *
- * FLEXIcontent is a derivative work of the excellent QuickFAQ component
- * @copyright (C) 2008 Christoph Lukes
- * see www.schlu.net for more information
- *
- * FLEXIcontent is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * @author          Emmanuel Danan, Georgios Papadakis, Yannick Berges, others, see contributor page
+ * @link            https://flexicontent.org
+ * @copyright       Copyright © 2018, FLEXIcontent team, All Rights Reserved
+ * @license         http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  */
 
-defined('_JEXEC') or die('Restricted access');
+defined('_JEXEC') or die;
 
 use Joomla\String\StringHelper;
 
@@ -36,11 +29,9 @@ require_once JPATH_ADMINISTRATOR . DS . 'components' . DS . 'com_flexicontent' .
 class FlexicontentControllerReviews extends FlexicontentController
 {
 	var $records_dbtbl = 'flexicontent_reviews_dev';
-
 	var $records_jtable = 'flexicontent_reviews';
 
 	var $record_name = 'review';
-
 	var $record_name_pl = 'reviews';
 
 	var $_NAME = 'REVIEW';
@@ -48,21 +39,20 @@ class FlexicontentControllerReviews extends FlexicontentController
 	var $runMode = 'standalone';
 
 	var $exitHttpHead = null;
-
 	var $exitMessages = array();
-
 	var $exitLogTexts = array();
-
 	var $exitSuccess  = true;
 
 	/**
 	 * Constructor
 	 *
-	 * @since 1.0
+	 * @param   array   $config    associative array of configuration settings.
+	 *
+	 * @since 3.3
 	 */
-	function __construct()
+	public function __construct($config = array())
 	{
-		parent::__construct();
+		parent::__construct($config);
 
 		// Register task aliases
 		$this->registerTask('add',          'edit');
@@ -109,11 +99,11 @@ class FlexicontentControllerReviews extends FlexicontentController
 	/**
 	 * Logic to save a record
 	 *
-	 * @access public
 	 * @return void
-	 * @since 1.5
+	 *
+	 * @since 3.3
 	 */
-	function save()
+	public function save()
 	{
 		// Check for request forgeries
 		JSession::checkToken('request') or jexit(JText::_('JINVALID_TOKEN'));
@@ -286,7 +276,7 @@ class FlexicontentControllerReviews extends FlexicontentController
 		}
 
 		// Clear dependent cache data
-		$this->_clearCache();
+		$this->_cleanCache();
 
 		// Checkin the record
 		$model->checkin();
@@ -321,9 +311,9 @@ class FlexicontentControllerReviews extends FlexicontentController
 	/**
 	 * Check in a record
 	 *
-	 * @since	1.5
+	 * @since	3.3
 	 */
-	function checkin()
+	public function checkin()
 	{
 		// Check for request forgeries
 		JSession::checkToken('request') or jexit(JText::_('JINVALID_TOKEN'));
@@ -336,11 +326,11 @@ class FlexicontentControllerReviews extends FlexicontentController
 	/**
 	 * Logic to publish records
 	 *
-	 * @access public
 	 * @return void
-	 * @since 1.5
+	 *
+	 * @since 3.3
 	 */
-	function publish()
+	public function publish()
 	{
 		$app   = JFactory::getApplication();
 		$user  = JFactory::getUser();
@@ -389,7 +379,7 @@ class FlexicontentControllerReviews extends FlexicontentController
 		$msg = $total . ' ' . JText::_('FLEXI_' . $this->_NAME . '_PUBLISHED');
 
 		// Clear dependent cache data
-		$this->_clearCache();
+		$this->_cleanCache();
 
 		$this->setRedirect($this->returnURL, $msg);
 	}
@@ -398,11 +388,11 @@ class FlexicontentControllerReviews extends FlexicontentController
 	/**
 	 * Logic to unpublish records
 	 *
-	 * @access public
 	 * @return void
-	 * @since 1.5
+	 *
+	 * @since 3.3
 	 */
-	function unpublish()
+	public function unpublish()
 	{
 		$app   = JFactory::getApplication();
 		$user  = JFactory::getUser();
@@ -459,7 +449,7 @@ class FlexicontentControllerReviews extends FlexicontentController
 		$msg = $total . ' ' . JText::_('FLEXI_' . $this->_NAME . '_UNPUBLISHED');
 
 		// Clear dependent cache data
-		$this->_clearCache();
+		$this->_cleanCache();
 
 		$this->setRedirect($this->returnURL, $msg);
 	}
@@ -468,11 +458,11 @@ class FlexicontentControllerReviews extends FlexicontentController
 	/**
 	 * Logic to delete records
 	 *
-	 * @access public
 	 * @return void
-	 * @since 1.5
+	 *
+	 * @since 3.3
 	 */
-	function remove()
+	public function remove()
 	{
 		$app   = JFactory::getApplication();
 		$user  = JFactory::getUser();
@@ -529,7 +519,7 @@ class FlexicontentControllerReviews extends FlexicontentController
 		$msg = $total . ' ' . JText::_('FLEXI_' . $this->_NAME . 'S_DELETED');
 
 		// Clear dependent cache data
-		$this->_clearCache();
+		$this->_cleanCache();
 
 		$this->setRedirect($this->returnURL, $msg);
 	}
@@ -557,11 +547,11 @@ class FlexicontentControllerReviews extends FlexicontentController
 	/**
 	 * Logic to create the view for record editing
 	 *
-	 * @access public
 	 * @return void
-	 * @since 1.0
+	 *
+	 * @since 3.3
 	 */
-	function edit()
+	public function edit()
 	{
 		$app      = JFactory::getApplication();
 		$user     = JFactory::getUser();
@@ -574,11 +564,11 @@ class FlexicontentControllerReviews extends FlexicontentController
 		// Get/Create the view
 		$viewType   = $document->getType();
 		$viewName   = $this->input->get('view', $this->default_view, 'cmd');
-		$viewLayout = $this->input->get('layout', 'default', 'string');
+		$viewLayout = $this->input->get('layout', $app->isAdmin() ? 'default' : 'form', 'string');
 		$view = $this->getView($viewName, $viewType, '', array('base_path' => $this->basePath, 'layout' => $viewLayout));
 
 		// Get/Create the model
-		$model  = $this->getModel($this->record_name);
+		$model = $this->getModel($this->record_name);
 		$record = $model->getItem();
 
 		// Push the model into the view (as default), later we will call the view display method instead of calling parent's display task, because it will create a 2nd model instance !!
@@ -592,7 +582,12 @@ class FlexicontentControllerReviews extends FlexicontentController
 		if (!$is_authorised)
 		{
 			$app->setHeader('status', '403 Forbidden', true);
-			$this->setRedirect($this->returnURL, JText::_('FLEXI_ALERTNOTAUTH_TASK'), 'error');
+			$app->enqueueMessage(JText::_('FLEXI_ALERTNOTAUTH_TASK'), 'error');
+
+			if ($this->input->getCmd('tmpl') !== 'component')
+			{
+				$this->setRedirect($this->returnURL);
+			}
 
 			return;
 		}
@@ -601,7 +596,12 @@ class FlexicontentControllerReviews extends FlexicontentController
 		if ($model->isCheckedOut($user->get('id')))
 		{
 			$app->setHeader('status', '400 Bad Request', true);
-			$this->setRedirect($this->returnURL, JText::_('FLEXI_EDITED_BY_ANOTHER_ADMIN'), 'warning');
+			$app->enqueueMessage(JText::_('FLEXI_EDITED_BY_ANOTHER_ADMIN'), 'warning');
+
+			if ($this->input->getCmd('tmpl') !== 'component')
+			{
+				$this->setRedirect($this->returnURL);
+			}
 
 			return;
 		}
@@ -610,7 +610,12 @@ class FlexicontentControllerReviews extends FlexicontentController
 		if (!$model->checkout())
 		{
 			$app->setHeader('status', '400 Bad Request', true);
-			$this->setRedirect($this->returnURL, JText::_('FLEXI_OPERATION_FAILED') . ' : ' . $model->getError(), 'error');
+			$app->enqueueMessage(JText::_('FLEXI_OPERATION_FAILED') . ' : ' . $model->getError(), 'error');
+
+			if ($this->input->getCmd('tmpl') !== 'component')
+			{
+				$this->setRedirect($this->returnURL);
+			}
 
 			return;
 		}
@@ -623,22 +628,26 @@ class FlexicontentControllerReviews extends FlexicontentController
 	/**
 	 * Method for clearing cache of data depending on records type
 	 *
-	 * return: string
+	 * @return void
 	 *
-	 * @since 1.5
+	 * @since 3.2.0
 	 */
-	private function _clearCache()
+	protected function _cleanCache()
 	{
-		if ($this->input->get('task', '', 'cmd') == __FUNCTION__)
-		{
-			die(__FUNCTION__ . ' : direct call not allowed');
-		}
+		$this->input->get('task', '', 'cmd') !== __FUNCTION__ or die(__FUNCTION__ . ' : direct call not allowed');
 
-		$cache = JFactory::getCache('com_flexicontent');
-		$cache->clean();
-		$itemcache = JFactory::getCache('com_flexicontent_items');
-		$itemcache->clean();
+		parent::_cleanCache();
+
+		$cache_site = FLEXIUtilities::getCache($group = '', $client = 0);
+		$cache_site->clean('com_flexicontent_items');
+
+		$cache_admin = FLEXIUtilities::getCache($group = '', $client = 1);
+		$cache_admin->clean('com_flexicontent_items');
+
+		// Also clean this as it contains Joomla frontend view cache of the component)
+		$cache_site->clean('com_flexicontent');
 	}
+
 
 
 	/**
@@ -666,20 +675,19 @@ class FlexicontentControllerReviews extends FlexicontentController
 	 */
 	private function _getContentModel($review_id)
 	{
-		if ($this->input->get('task', '', 'cmd') == __FUNCTION__)
-		{
-			die(__FUNCTION__ . ' : direct call not allowed');
-		}
+		$this->input->get('task', '', 'cmd') !== __FUNCTION__ or die(__FUNCTION__ . ' : direct call not allowed');
 
-		// Get review model and from it get the associated content ID of the review
-		$review_model = $this->getModel('review');
+		// Get review model and from it get the associated content ID and content Type
+		$review_model = $this->getModel($this->record_name);
 		$review_model->setId($review_id);
-		$content_id = $review_model->get('content_id');
 
-		// Get content item owner via a new content item model
-		$item_model = $this->getModel('item');
-		$item_model->setId($content_id);  // Set desired content ID into the content item model
+		$content_id   = $review_model->get('content_id');
+		$content_type = $review_model->get('type');
 
-		return $item_model;
+		// Get the related content model and set the desired content ID into the content item model
+		$content_model = $this->getModel($content_type);
+		$content_model->setId($content_id);
+
+		return $content_model;
 	}
 }

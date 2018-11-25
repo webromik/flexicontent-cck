@@ -163,7 +163,7 @@ class FlexicontentModelCategory extends JModelLegacy {
 		// Set category id and call constrcuctor
 		$cid = JFactory::getApplication()->input->get('cid', 0, 'int');
 
-		// Catch case that 'cid' is an array (bug other bad url)
+		// Catch case that 'cid' is an array (bug or not so proper url)
 		$cid = is_array($cid) ? (int) reset($cid) : $cid;
 		JFactory::getApplication()->input->set('cid', $cid ?: null);
 
@@ -234,7 +234,7 @@ class FlexicontentModelCategory extends JModelLegacy {
 					$_cids = explode(',', $_cids);
 				}
 
-				JArrayHelper::toInteger($_cids);
+				$_cids = ArrayHelper::toInteger($_cids);
 				$this->_ids = $_cids;
 
 				// Clear category id, it is not used by this layout
@@ -654,16 +654,9 @@ class FlexicontentModelCategory extends JModelLegacy {
 			// Create JOIN for ordering items by a most rated
 			if ( in_array('rated', $order) )
 			{
-				$voting_field = reset(FlexicontentFields::getFieldsByIds(array(11)));
-				$voting_field->parameters = new JRegistry($voting_field->attribs);
-				$default_rating = (int) $voting_field->parameters->get('default_rating', 70);
-				$_weights = array();
-				for ($i = 1; $i <= 9; $i++)
-				{
-					$_weights[] = 'WHEN '.$i.' THEN '.round(((int) $voting_field->parameters->get('vote_'.$i.'_weight', 100)) / 100, 2).'*((cr.rating_sum / cr.rating_count) * 20)';
-				}
-				$orderby_col   = ', CASE cr.rating_count WHEN NULL THEN ' . $default_rating . ' ' . implode(' ', $_weights).' ELSE (cr.rating_sum / cr.rating_count) * 20 END AS votes';
-				$orderby_join .= ' LEFT JOIN #__content_rating AS cr ON cr.content_id = i.id';
+				$rating_join = null;
+				$orderby_col   = ', ' . flexicontent_db::buildRatingOrderingColumn($rating_join);
+				$orderby_join .= ' LEFT JOIN ' . $rating_join;
 			}
 		}
 
@@ -946,6 +939,7 @@ class FlexicontentModelCategory extends JModelLegacy {
 		$_join_clauses = ''
 			. ($this->_layout=='favs' ? ' LEFT JOIN #__flexicontent_favourites AS fav ON fav.itemid = i.id AND type = 0' : '')
 			. ($this->_layout=='tags' ? ' JOIN #__flexicontent_tags_item_relations AS tag ON tag.itemid = i.id' : '')
+			. ($this->_layout=='tags' ? ' JOIN #__flexicontent_tags AS tagtbl ON tagtbl.id = tag.tid AND tagtbl.published = 1' : '')
 			. ' JOIN #__flexicontent_types AS ty ON '. ($counting ? 'i.' : 'ie.') .'type_id = ty.id'
 			. ' JOIN #__flexicontent_cats_item_relations AS rel ON rel.itemid = i.id'
 			. ' JOIN #__categories AS c ON c.id = i.catid'
@@ -1370,7 +1364,7 @@ class FlexicontentModelCategory extends JModelLegacy {
 				$_cids = explode(',', $_cids);
 			}
 
-			JArrayHelper::toInteger($_cids);
+			$_cids = ArrayHelper::toInteger($_cids);
 
 			$this->_params->set('txt_ac_cid', 'NA');
 			$this->_params->set('txt_ac_cids', $_cids);
@@ -2465,7 +2459,7 @@ class FlexicontentModelCategory extends JModelLegacy {
 				break;
 
 			case 'createdby':
-				JArrayHelper::toInteger($values);  // Sanitize filter values as integers
+				$values = ArrayHelper::toInteger($values);  // Sanitize filter values as integers
 				$query  = 'SELECT id'
 						. ' FROM #__flexicontent_items_tmp'
 						. ' WHERE created_by IN ('. implode(",", $values) .')';
@@ -2473,7 +2467,7 @@ class FlexicontentModelCategory extends JModelLegacy {
 				break;
 
 			case 'modifiedby':
-				JArrayHelper::toInteger($values);  // Sanitize filter values as integers
+				$values = ArrayHelper::toInteger($values);  // Sanitize filter values as integers
 				$query  = 'SELECT id'
 						. ' FROM #__flexicontent_items_tmp'
 						. ' WHERE modified_by IN ('. implode(",", $values) .')';
@@ -2481,7 +2475,7 @@ class FlexicontentModelCategory extends JModelLegacy {
 				break;
 
 			case 'type':
-				JArrayHelper::toInteger($values);  // Sanitize filter values as integers
+				$values = ArrayHelper::toInteger($values);  // Sanitize filter values as integers
 				$query  = 'SELECT id'
 						. ' FROM #__flexicontent_items_tmp'
 						. ' WHERE type_id IN ('. implode(",", $values) .')';
@@ -2500,7 +2494,7 @@ class FlexicontentModelCategory extends JModelLegacy {
 				break;
 
 			case 'categories':
-				JArrayHelper::toInteger($values);  // Sanitize filter values as integers
+				$values = ArrayHelper::toInteger($values);  // Sanitize filter values as integers
 				global $globalcats;
 				$display_subcats = $this->_params->get('display_subcategories_items', 2);   // include subcategory items
 				$query_catids = array();
@@ -2521,7 +2515,7 @@ class FlexicontentModelCategory extends JModelLegacy {
 				break;
 
 			case 'tags':
-				JArrayHelper::toInteger($values);  // Sanitize filter values as integers
+				$values = ArrayHelper::toInteger($values);  // Sanitize filter values as integers
 				$query  = 'SELECT itemid'
 						. ' FROM #__flexicontent_tags_item_relations'
 						. ' WHERE tid IN ('. implode(",", $values) .')';  // no db quoting needed since these were typecasted to ints

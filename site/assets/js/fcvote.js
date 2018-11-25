@@ -1,9 +1,10 @@
 jQuery(document).ready(function(){
 	//var url = location.href;  // entire url including querystring - also: window.location.href;
-	//var live_site = url.substring(0, url.indexOf('/', 14)) + fc_root_uri + '/';
+	//var live_site_root = url.substring(0, url.indexOf('/', 14)) + fc_root_uri;
 	
 	var currentURL = window.location;
-	var live_site = currentURL.protocol + '//' + currentURL.host + fc_root_uri;
+	var live_site_root = currentURL.protocol + '//' + currentURL.host + fc_root_uri;
+	var live_site_base = currentURL.protocol + '//' + currentURL.host + fc_base_uri;
 	var under_vote = false;
 	
 	if (jQuery('.fcvote').length)
@@ -41,41 +42,57 @@ jQuery(document).ready(function(){
 			xid_msg.empty().show().addClass('ajax-loader');
 
 			var rating = jQuery(this).text();
-			var voteurl = live_site + "/index.php?option=com_flexicontent&format=raw&task=ajaxvote&user_rating=" + rating + "&cid=" + itemID + "&xid=" + xid;
+
+			var voteurl = live_site_base +
+				"/index.php?option=com_flexicontent&format=raw&task=ajaxvote&user_rating=" + rating + "&cid=" + itemID + "&xid=" + xid;
 
 			jQuery.ajax({
 				url: voteurl,
 				dataType: "json",
 				data: {
-					lang: (typeof _FC_GET !="undefined" && 'lang' in _FC_GET ? _FC_GET['lang']: '')
+					lang: (typeof fc_sef_lang != 'undefined' ? fc_sef_lang : '')
 				},
 				success: function( data )
 				{
-					if (typeof(data.percentage)!="undefined" && data.percentage) {
+					if (typeof(data.percentage)!="undefined" && data.percentage)
+					{
 						xid_rating.css('width', data.percentage + "%");
 					}
-					if (typeof(data.percentage_main)!="undefined" && data.percentage_main) {
+					if (typeof(data.percentage_main)!="undefined" && data.percentage_main)
+					{
 						main_rating.css('width', data.percentage_main + "%");
 					}
 					
-					if (typeof(data.htmlrating)!="undefined" && data.htmlrating) {
+					if (typeof(data.htmlrating)!="undefined" && data.htmlrating)
+					{
 						_htmlrating = data.htmlrating;
 					}
-					if (typeof(data.htmlrating_main)!="undefined" && data.htmlrating_main) {
+					if (typeof(data.htmlrating_main)!="undefined" && data.htmlrating_main)
+					{
 						_htmlrating_main = data.htmlrating_main;
 					}
 					
-					if (typeof(data.html) && data.html) {
-						xid_cnt.html(data.html).show();//.removeClass('ajax-loader');
-						setTimeout(function() { xid_cnt.animate({opacity: "0.5"}, 900);  }, 2000);
-						setTimeout(function() {
+					if (typeof(data.html) && data.html)
+					{
+						xid_cnt.html(data.html).show();
+
+						setTimeout(function()
+						{
+							xid_cnt.animate({opacity: "0.5"}, 900);
+						}, 2000);
+
+						setTimeout(function()
+						{
 							xid_cnt.css('opacity', 'unset');
 							if(_htmlrating.trim())
+							{
 								xid_cnt.css('opacity', 1).html(_htmlrating);
-							else
-								xid_cnt.html('').hide();
+							}
+							//else xid_cnt.html('').hide();
 						}, 3000);
-					} else {
+					}
+					else
+					{
 						xid_cnt.html(_htmlrating).removeClass('ajax-loader');
 					}
 					
@@ -122,6 +139,7 @@ jQuery(document).ready(function(){
 	{
 		var box = jQuery('#'+tagid);
 		var box_loading = jQuery('#'+tagid+'_loading');
+
 		if (box.is(":visible"))
 		{
 			box_loading.empty().removeClass('ajax-loader').css('display', 'none');
