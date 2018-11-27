@@ -1314,10 +1314,38 @@ class flexicontent_html
 				break;
 
 			case 'google-maps':
-				//$force_language = $mode == 'form' ? '&amp;language=' . flexicontent_html::getUserCurrentLang() : '';
-				$force_language = '&amp;language=' . flexicontent_html::getUserCurrentLang();
-				$google_maps_js_api_key = $params->get('google_maps_js_api_key', $params->get('apikey'));
-				$document->addScript('https://maps.google.com/maps/api/js?libraries=geometry,places' . ($google_maps_js_api_key ? '&amp;key=' . $google_maps_js_api_key : '') . $force_language);
+				//$force_language = $mode == 'form' ? '&language=' . flexicontent_html::getUserCurrentLang() : '';
+				$force_language = '&language=' . flexicontent_html::getUserCurrentLang();
+				$apikey = trim($params->get('google_maps_js_api_key', $params->get('apikey')));
+
+				// Key is not empty
+				if ($apikey)
+				{
+					// Get head object
+					$head_obj = $document->mergeHeadData(array(1=>1));
+
+					// Unset any previous URL that had no KEY
+					unset($head_obj->_links['https://maps.google.com/maps/api/js?libraries=geometry,places' . $force_language]);
+				}
+
+				// Key is empty
+				else
+				{
+					// Unset framework-added Flag, to allow retry with other module or field configuration, that may have configured a KEY
+					unset($load_frameworks[$framework]);
+				}
+
+				// Add map link 
+				$document->addScript('https://maps.google.com/maps/api/js?libraries=geometry,places' . ($apikey ? '&key=' . $apikey : '') . $force_language);
+				break;
+
+			case 'openstreetmap' :
+				$framework_path = JUri::root(true).$lib_path.'/leaflet';
+				$document->addStyleSheet($framework_path.'/leaflet.css');
+				$document->addStyleSheet($framework_path.'/MarkerCluster.css');
+				$document->addStyleSheet($framework_path.'/MarkerCluster.Default.css');
+				$document->addScript($framework_path.'/leaflet.js');
+				$document->addScript($framework_path.'/leaflet.markercluster.js');
 				break;
 
 			case 'select2':
