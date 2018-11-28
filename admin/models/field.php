@@ -128,7 +128,7 @@ class FlexicontentModelField extends FCModelAdmin
 	 * @return	object
 	 * @since	1.0
 	 */
-	function & getField($pk = null)
+	function getField($pk = null)
 	{
 		return parent::getRecord($pk);
 	}

@@ -127,7 +127,7 @@ class FlexicontentModelReview extends FCModelAdmin
 	 * @return	object
 	 * @since	1.0
 	 */
-	function & getReview($pk = null)
+	function getReview($pk = null)
 	{
 		return parent::getRecord($pk);
 	}

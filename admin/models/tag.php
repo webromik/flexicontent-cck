@@ -127,7 +127,7 @@ class FlexicontentModelTag extends FCModelAdmin
 	 * @return	object
 	 * @since	1.0
 	 */
-	function & getTag($pk = null)
+	function getTag($pk = null)
 	{
 		return parent::getRecord($pk);
 	}

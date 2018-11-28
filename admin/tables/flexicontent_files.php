@@ -1,30 +1,17 @@
 <?php
 /**
- * @version 1.5 stable $Id: flexicontent_files.php 1665 2013-04-08 02:26:21Z ggppdk $
- * @package Joomla
- * @subpackage FLEXIcontent
- * @copyright (C) 2009 Emmanuel Danan - www.vistamedia.fr
- * @license GNU/GPL v2
- * 
- * FLEXIcontent is a derivative work of the excellent QuickFAQ component
- * @copyright (C) 2008 Christoph Lukes
- * see www.schlu.net for more information
+ * @package         FLEXIcontent
+ * @version         3.3
  *
- * FLEXIcontent is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * @author          Emmanuel Danan, Georgios Papadakis, Yannick Berges, others, see contributor page
+ * @link            https://flexicontent.org
+ * @copyright       Copyright © 2018, FLEXIcontent team, All Rights Reserved
+ * @license         http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  */
 
 defined('_JEXEC') or die('Restricted access');
 
-/**
- * FLEXIcontent table class
- *
- * @package Joomla
- * @subpackage FLEXIcontent
- * @since 1.0
- */
+
 class flexicontent_files extends JTable
 {
 	/**
@@ -96,7 +83,6 @@ class flexicontent_files extends JTable
 	public function __construct(& $db)
 	{
 		$this->_records_dbtbl  = 'flexicontent_' . $this->_record_name . 's';
-		$this->_records_jtable = 'flexicontent_' . $this->_record_name . 's';
 		$this->_NAME = strtoupper($this->_record_name);
 
 		parent::__construct('#__' . $this->_records_dbtbl, 'id', $db);

@@ -1173,9 +1173,12 @@ abstract class FCModelAdmin extends JModelAdmin
 	protected function _prepareBind($record, & $data)
 	{
 		// (For nested records) Set the new parent id if parent id not matched OR while New/Save as Copy .
-		if (property_exists($record, 'parent_id') && ($record->parent_id != $data['parent_id'] || $data['id'] == 0))
+		if (method_exists($record, 'setLocation'))
 		{
-			$record->setLocation($data['parent_id'], 'last-child');
+			if (property_exists($record, 'parent_id') && ($record->parent_id != $data['parent_id'] || $data['id'] == 0))
+			{
+				$record->setLocation($data['parent_id'], 'last-child');
+			}
 		}
 
 		// Put the new records in last position
