@@ -1,57 +1,55 @@
 <?php
 /**
- * @version 1.5 stable $Id: field.php 1640 2013-02-28 14:45:19Z ggppdk $
- * @package Joomla
- * @subpackage FLEXIcontent
- * @copyright (C) 2009 Emmanuel Danan - www.vistamedia.fr
- * @license GNU/GPL v2
- * 
- * FLEXIcontent is a derivative work of the excellent QuickFAQ component
- * @copyright (C) 2008 Christoph Lukes
- * see www.schlu.net for more information
+ * @package         FLEXIcontent
+ * @version         3.3
  *
- * FLEXIcontent is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * @author          Emmanuel Danan, Georgios Papadakis, Yannick Berges, others, see contributor page
+ * @link            https://flexicontent.org
+ * @copyright       Copyright © 2018, FLEXIcontent team, All Rights Reserved
+ * @license         http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  */
 
-// no direct access
 defined('_JEXEC') or die('Restricted access');
 
 jimport('legacy.model.admin');
 use Joomla\String\StringHelper;
+use Joomla\Utilities\ArrayHelper;
+
 require_once('base.php');
 
 /**
  * FLEXIcontent Component Field Model
  *
- * @package Joomla
- * @subpackage FLEXIcontent
- * @since		1.0
  */
 class FlexicontentModelField extends FCModelAdmin
 {
 	/**
-	 * Record name
+	 * Record name, (parent class property), this is used for: naming session data, XML file of class, etc
 	 *
 	 * @var string
 	 */
-	var $record_name = 'field';
+	protected $name = 'field';
 
 	/**
-	 * Record database table 
+	 * Record database table
 	 *
 	 * @var string
 	 */
-	var $records_dbtbl = null;
+	var $records_dbtbl = 'flexicontent_fields';
 
 	/**
 	 * Record jtable name
 	 *
 	 * @var string
 	 */
-	var $records_jtable = null;
+	var $records_jtable = 'flexicontent_fields';
+
+	/**
+	 * Column names
+	 */
+	var $state_col   = 'published';
+	var $name_col    = 'label';
+	var $parent_col  = null;//'parent_id';
 
 	/**
 	 * Record primary key
@@ -68,7 +66,7 @@ class FlexicontentModelField extends FCModelAdmin
 	var $_record = null;
 
 	/**
-	 * Events context to use during model FORM events triggering
+	 * Events context to use during model FORM events and diplay PREPARE events triggering
 	 *
 	 * @var object
 	 */
@@ -115,20 +113,23 @@ class FlexicontentModelField extends FCModelAdmin
 	 *
 	 * @since 1.0
 	 */
-	function __construct()
+	public function __construct($config = array())
 	{
-		parent::__construct();
+		parent::__construct($config);
+
+		$this->canManage    = FlexicontentHelperPerm::getPerm()->CanFields;
+		$this->canCreate    = FlexicontentHelperPerm::getPerm()->CanAddField;
 	}
 
 
 	/**
 	 * Legacy method to get the record
 	 *
-	 * @access	public
 	 * @return	object
+	 *
 	 * @since	1.0
 	 */
-	function getField($pk = null)
+	public function getField($pk = null)
 	{
 		return parent::getRecord($pk);
 	}
@@ -137,9 +138,12 @@ class FlexicontentModelField extends FCModelAdmin
 	/**
 	 * Method to initialise the record data
 	 *
-	 * @access	protected
+	 * @param   object      $record    The record being initialized
+	 * @param   boolean     $initOnly  If true then only a new record will be initialized without running the _afterLoad() method
+	 *
 	 * @return	boolean	True on success
-	 * @since	1.0
+	 *
+	 * @since	1.5
 	 */
 	protected function _initRecord(&$record = null, $initOnly = false)
 	{
@@ -149,7 +153,7 @@ class FlexicontentModelField extends FCModelAdmin
 		// Either the DB default values (set by getTable() method) or the values set by _afterLoad() method
 		$record->id							= 0;
 		$record->field_type			= 'text';
-		$record->name						= null;  //$this->record_name . ($this->_getLastId() + 1);
+		$record->name						= null;  //$this->getName() . ($this->_getLastId() + 1);
 		$record->label					= null;
 		$record->description		= null;
 		$record->isfilter				= 0;
@@ -175,15 +179,15 @@ class FlexicontentModelField extends FCModelAdmin
 
 
 	/**
-	 * Method to store the record
+	 * Legacy method to store the record, use save() instead
 	 *
 	 * @param   array  $data  The form data.
 	 *
 	 * @return  boolean  True on success.
 	 *
-	 * @since   1.6
+	 * @since   3.2.0
 	 */
-	function store($data)
+	public function store($data)
 	{
 		return parent::store($data);
 	}
@@ -206,18 +210,6 @@ class FlexicontentModelField extends FCModelAdmin
 	{
 		$data_obj = $data && is_array($data) ? (object) $data : $data;
 
-		// If no given DATA then try to use posted data to determine new field type
-		if (empty($data_obj))
-		{
-			$jform_data = JFactory::getApplication()->input->get('jform', array(), 'array');
-			if ($jform_data && isset($jform_data['field_type']))
-			{
-				$data_obj = new stdClass();
-				$data_obj->iscore = isset($jform_data['iscore']) ? (int) $jform_data['iscore'] : 0;
-				$data_obj->field_type = JFilterInput::getInstance()->clean($jform_data['field_type'], 'CMD');
-			}
-		}
-
 		jimport('joomla.filesystem.file');
 		jimport('joomla.filesystem.folder');
 
@@ -237,6 +229,25 @@ class FlexicontentModelField extends FCModelAdmin
 		if (!JFile::exists($plugin_path))
 		{
 			throw new Exception('Error field XML file for field type: - ' . $this->field_type . '- was not found');
+		}
+		
+		/**
+		 * Do not allow changing some properties
+		 */
+
+		if (!empty($this->_record->iscore))
+		{
+			$form->setFieldAttribute('name', 'readonly', 'true');
+			$form->setFieldAttribute('name', 'filter', 'unset');
+		}
+
+		$form->setFieldAttribute('iscore', 'readonly', 'true');
+		$form->setFieldAttribute('iscore', 'filter', 'unset');
+
+		if ($this->_record->id > 0 && $this->_record->id < 7)
+		{
+			$form->setFieldAttribute('published', 'readonly', 'true');
+			$form->setFieldAttribute('published', 'filter', 'unset');
 		}
 
 
@@ -303,17 +314,17 @@ class FlexicontentModelField extends FCModelAdmin
 	/**
 	 * Method to check if the user can edit the record
 	 *
-	 * @access	public
 	 * @return	boolean	True on success
+	 *
 	 * @since	3.2.0
 	 */
-	function canEdit($record=null)
+	public function canEdit($record = null)
 	{
-		$record = $record ?: $this->_record;
-		$user = JFactory::getUser();
+		$record  = $record ?: $this->_record;
+		$user    = JFactory::getUser();
 
 		return !$record || !$record->id
-			? $user->authorise('flexicontent.createfield', 'com_flexicontent')
+			? $this->canCreate
 			: $user->authorise('flexicontent.editfield', 'com_flexicontent.field.' . $record->id);
 	}
 
@@ -321,32 +332,36 @@ class FlexicontentModelField extends FCModelAdmin
 	/**
 	 * Method to check if the user can edit record 's state
 	 *
-	 * @access	public
 	 * @return	boolean	True on success
+	 *
 	 * @since	3.2.0
 	 */
-	function canEditState($record=null)
+	public function canEditState($record = null)
 	{
-		$record = $record ?: $this->_record;
-		$user = JFactory::getUser();
+		$record  = $record ?: $this->_record;
+		$user    = JFactory::getUser();
 
-		return $user->authorise('flexicontent.publishfield', 'com_flexicontent.field.' . $record->id);
+		return $record->id < 7
+			?	false
+			: $user->authorise('flexicontent.publishfield', 'com_flexicontent.field.' . $record->id);
 	}
 
 
 	/**
 	 * Method to check if the user can delete the record
 	 *
-	 * @access	public
 	 * @return	boolean	True on success
+	 *
 	 * @since	3.2.0
 	 */
-	function canDelete($record=null)
+	public function canDelete($record = null)
 	{
-		$record = $record ?: $this->_record;
-		$user = JFactory::getUser();
+		$record  = $record ?: $this->_record;
+		$user    = JFactory::getUser();
 
-		return $user->authorise('flexicontent.deletefield', 'com_flexicontent.field.' . $record->id);
+		return $record->id < 7
+			?	false
+			: $user->authorise('flexicontent.deletefield', 'com_flexicontent.field.' . $record->id);
 	}
 
 
@@ -355,29 +370,32 @@ class FlexicontentModelField extends FCModelAdmin
 	 *
 	 * Note. Typically called inside this MODEL 's store()
 	 *
+	 * @param   object     $record   The record object
+	 * @param   array      $data     The new data array
+	 *
 	 * @since	3.2.0
 	 */
 	protected function _prepareBind($record, & $data)
 	{
-		parent::_prepareBind($record, $data);
-
-		// Support for 'dirty' field properties
+		/**
+		 * Support for 'dirty' field properties
+		 */
 		if ($data['id'])
 		{
 			if ($record->issearch==-1 || $record->issearch==2) unset($data['issearch']);  // Already dirty
-			else if (@ $data['issearch']==0 && $record->issearch==1) $data['issearch']=-1; // Becomes dirty OFF
-			else if (@ $data['issearch']==1 && $record->issearch==0) $data['issearch']=2;  // Becomes dirty ON
-			
+			elseif (@ $data['issearch']==0 && $record->issearch==1) $data['issearch'] = -1; // Becomes dirty OFF
+			elseif (@ $data['issearch']==1 && $record->issearch==0) $data['issearch'] = 2;  // Becomes dirty ON
+
 			if ($record->isadvsearch==-1 || $record->isadvsearch==2) unset($data['isadvsearch']);  // Already dirty
-			else if (@ $data['isadvsearch']==0 && $record->isadvsearch==1) $data['isadvsearch']=-1; // Becomes dirty OFF
-			else if (@ $data['isadvsearch']==1 && $record->isadvsearch==0) $data['isadvsearch']=2;  // Becomes dirty ON
-			
+			elseif (@ $data['isadvsearch']==0 && $record->isadvsearch==1) $data['isadvsearch'] = -1; // Becomes dirty OFF
+			elseif (@ $data['isadvsearch']==1 && $record->isadvsearch==0) $data['isadvsearch'] = 2;  // Becomes dirty ON
+
 			if ($record->isadvfilter==-1 || $record->isadvfilter==2) unset($data['isadvfilter']);  // Already dirty
-			else if (@ $data['isadvfilter']==0 && $record->isadvfilter==1) $data['isadvfilter']=-1; // Becomes dirty OFF
-			else if (@ $data['isadvfilter']==1 && $record->isadvfilter==0) $data['isadvfilter']=2;  // Becomes dirty ON
-			
+			elseif (@ $data['isadvfilter']==0 && $record->isadvfilter==1) $data['isadvfilter'] = -1; // Becomes dirty OFF
+			elseif (@ $data['isadvfilter']==1 && $record->isadvfilter==0) $data['isadvfilter'] = 2;  // Becomes dirty ON
+
 			// FORCE dirty OFF, if field is being unpublished -and- is not already normal OFF
-			if ( isset($data['published']) && $data['published']==0 && $record->published==1 )
+			if (isset($data['published']) && $data['published']==0 && $record->published==1)
 			{
 				if ($record->issearch!=0) $data['issearch'] = -1;
 				if ($record->isadvsearch!=0) $data['isadvsearch'] = -1;
@@ -385,11 +403,16 @@ class FlexicontentModelField extends FCModelAdmin
 			}
 		}
 
-		if (!$data['id'] && !empty($data['iscore']))
+		/**
+		 * Positions are always posted, otherwise they must be cleared
+		 */
+		if (!isset($data['positions']))
 		{
-			$this->setError('Field\'s "iscore" property is ON, but creating new fields as CORE is not allowed');
-			return false;
+			$data['positions'] = '';
 		}
+
+		// Call parent class bind preparation
+		parent::_prepareBind($record, $data);
 	}
 
 
@@ -397,6 +420,9 @@ class FlexicontentModelField extends FCModelAdmin
 	 * Method to do some work after record has been stored
 	 *
 	 * Note. Typically called inside this MODEL 's store()
+	 *
+	 * @param   object     $record   The record object
+	 * @param   array      $data     The new data array
 	 *
 	 * @since	3.2.0
 	 */
@@ -408,6 +434,7 @@ class FlexicontentModelField extends FCModelAdmin
 		$types = ! empty($data['tid'])
 			? $data['tid']
 			: array();
+
 		$this->_assignTypesToField($types);
 	}
 
@@ -416,6 +443,8 @@ class FlexicontentModelField extends FCModelAdmin
 	 * Method to do some work after record has been loaded via JTable::load()
 	 *
 	 * Note. Typically called inside this MODEL 's store()
+	 *
+	 * @param	object   $record   The record object
 	 *
 	 * @since	3.2.0
 	 */
@@ -445,60 +474,89 @@ class FlexicontentModelField extends FCModelAdmin
 
 
 	/**
+	 * START OF MODEL SPECIFIC METHODS
+	 */
+
+
+	/**
 	 * Method to assign types to a field
 	 *
-	 * @access	private
-	 * @return	boolean	True on success
+	 * @return  boolean    True on success
+	 *
 	 * @since	1.0
 	 */
-	private function _assignTypesToField($types)
+	protected function _assignTypesToField($types)
 	{
 		$field = $this->_record;
-		
-		// Override 'types' for core fields, since the core field must be assigned to all types
-		if ($field->iscore == 1)
-		{
-			$query 	= 'SELECT id'
-				. ' FROM #__flexicontent_types'
-				;
-			$this->_db->setQuery($query);
-			$types = $this->_db->loadColumn();
-		}
-		
-		// Store field to types relations
-		// delete relations which type is not part of the types array anymore
-		$query 	= 'DELETE FROM #__flexicontent_fields_type_relations'
-			. ' WHERE field_id = '.$field->id
-			. (!empty($types) ? ' AND type_id NOT IN (' . implode(', ', $types) . ')' : '')
-			;
-		$this->_db->setQuery($query);
-		$this->_db->execute();
-		
-		// draw an array of the used types
-		$query 	= 'SELECT type_id'
-			. ' FROM #__flexicontent_fields_type_relations'
-			. ' WHERE field_id = '.$field->id
-			;
-		$this->_db->setQuery($query);
-		$used = $this->_db->loadColumn();
-		
-		foreach($types as $type)
-		{
-			// insert only the new records
-			if (!in_array($type, $used)) {
-				//get last position of each field in each type;
-				$query 	= 'SELECT max(ordering) as ordering'
-					. ' FROM #__flexicontent_fields_type_relations'
-					. ' WHERE type_id = ' . $type
-					;
-				$this->_db->setQuery($query);
-				$ordering = $this->_db->loadResult()+1;
 
-				$query 	= 'INSERT INTO #__flexicontent_fields_type_relations (`field_id`, `type_id`, `ordering`)'
-					.' VALUES(' . $field->id . ',' . $type . ', ' . $ordering . ')'
-					;
-				$this->_db->setQuery($query);
-				$this->_db->execute();
+		/**
+		 * Override 'types' for core fields, since the core field must be assigned to all types
+		 * but alllow core fields 'voting', 'favourites, to selectively assigned to types
+		 */
+		if ($field->iscore && !in_array($field->field_type, array('voting', 'favourites'), true))
+		{
+			$query = $this->_db->getQuery(true)
+				->select('id')
+				->from('#__flexicontent_types');
+
+			$types = $this->_db->setQuery($query)->loadColumn();
+		}
+
+		/**
+		 * Store field to types relations
+		 * Try to avoid unneeded deletion and insertions
+		 */
+
+		// First, delete existing types assignments no longer used by the field
+		$query = $this->_db->getQuery(true)
+			->delete('#__flexicontent_fields_type_relations')
+			->where('field_id = ' . (int) $field->id);
+
+		if (!empty($types))
+		{
+			$query->where('type_id NOT IN (' . implode(', ', $types) . ')');
+		}
+
+		$this->_db->setQuery($query)->execute();
+
+		// Second, find type assignments of the field that did not changed
+		$query = $this->_db->getQuery(true)
+			->select('type_id')
+			->from('#__flexicontent_fields_type_relations')
+			->where('field_id = ' . (int) $field->id);
+
+		$used = $this->_db->setQuery($query)->loadColumn();
+
+		// Third, insert only the new records
+		foreach ($types as $type)
+		{
+			if (!in_array($type, $used))
+			{
+				// Get last position of each field in each type
+				$query = $this->_db->getQuery(true)
+					->select('MAX(ordering) as ordering')
+					->from('#__flexicontent_fields_type_relations')
+					->where('type_id = ' . (int) $type);
+
+				$ordering = $this->_db->setQuery($query)->loadResult();
+
+				// Insert new type assignment using the next available ordering
+				$ordering += 1;
+
+				$query = $this->_db->getQuery(true)
+					->insert('#__flexicontent_fields_type_relations')
+					->columns(array(
+						$this->_db->quoteName('field_id'),
+						$this->_db->quoteName('type_id'),
+						$this->_db->quoteName('ordering')
+					))
+					->values(
+						(int) $field->id . ' , ' .
+						(int) $type . ' , ' .
+						(int) $ordering
+					);
+
+				$this->_db->setQuery($query)->execute();
 			}
 		}
 	}
@@ -506,11 +564,12 @@ class FlexicontentModelField extends FCModelAdmin
 
 	/**
 	 * Method to get types list
-	 * 
+	 *
 	 * @return array
+	 *
 	 * @since 1.5
 	 */
-	function getTypeslist ( $type_ids=false, $check_perms = false, $published=false )
+	public function getTypeslist ( $type_ids=false, $check_perms = false, $published=false )
 	{
 		return flexicontent_html::getTypesList( $type_ids, $check_perms, $published);
 	}
@@ -518,22 +577,25 @@ class FlexicontentModelField extends FCModelAdmin
 
 	/**
 	 * Method to the Field Type for a given or for current field ID
-	 * 
+	 *
 	 * @return array
+	 *
 	 * @since 3.2
 	 */
-	function getFieldType($pk = 0)
+	public function getFieldType($pk = 0)
 	{
 		$pk = $pk ?: (int) $this->_id;
 
-		if ( ! $pk ) return array();
+		if (!$pk)
+		{
+			return array();
+		}
 
-		$query = 'SELECT DISTINCT type_id '
-			. ' FROM #__flexicontent_fields_type_relations '
-			. ' WHERE field_id = ' . $pk
-			;
-		$this->_db->setQuery($query);
+		$query = $this->_db->getQuery(true)
+			->select('DISTINCT type_id')
+			->from('#__flexicontent_fields_type_relations')
+			->where('field_id = ' . (int) $pk);
 
-		return $this->_db->loadColumn();
+		return $this->_db->setQuery($query)->loadColumn();
 	}
 }

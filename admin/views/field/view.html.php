@@ -325,7 +325,8 @@ class FlexicontentViewField extends JViewLegacy
 		else
 		{
 			// Set name property as readonly
-			$form->setFieldAttribute('name', 'readonly', 'true');
+			// ... done by model's preprocessForm() method
+			//$form->setFieldAttribute('name', 'readonly', 'true');
 		}
 
 
