@@ -1285,10 +1285,21 @@ class flexicontent_html
 				}
 				break;
 
+			case 'mousewheel':
+				if ($load_jquery) flexicontent_html::loadJQuery();
+
+				$framework_path = JUri::root(true).$lib_path.'/mousewheel';
+				$document->addScript($framework_path.'/jquery.mousewheel.min.js');
+				break;
+
 			case 'mCSB':
 				if ($load_jquery) flexicontent_html::loadJQuery();
 
 				$framework_path = JUri::root(true).$lib_path.'/mCSB';
+
+				// Load jQuery mouse wheel as this JS can make use of it
+				flexicontent_html::loadFramework('mousewheel');
+
 				$document->addScript($framework_path.'/jquery.mCustomScrollbar.min.js');
 				$document->addStyleSheet($framework_path.'/jquery.mCustomScrollbar.css');
 
