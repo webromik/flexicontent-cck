@@ -195,7 +195,7 @@ function delAllFilters() {
 			$row = & $this->rows[$i];
 			$link 		= 'index.php?option=com_flexicontent&amp;task=types.edit&amp;view=type&amp;id='. $row->id;
 			$published 	= JHtml::_('jgrid.published', $row->published, $i, 'types.' );
-			$access		= flexicontent_html::userlevel('access['.$row->id.']', $row->access, 'onchange="return listItemTask(\'cb'.$i.'\',\'types.access\')" class="use_select2_lib fc_skip_highlight"');
+			$access		= flexicontent_html::userlevel('access['.$row->id.']', $row->access, 'onchange="return listItemTask(\'cb'.$i.'\',\'types.access\')"');
 
 			$fields_url = 'index.php?option=com_flexicontent&amp;view=fields&amp;filter_type='. $row->id;
 			$items_url  = 'index.php?option=com_flexicontent&amp;view=items&amp;filter_type='. $row->id;
@@ -266,7 +266,7 @@ function delAllFilters() {
 					$jview_ops[] = JHtml::_('select.option', '0', 'FLEXI_ROUTE_TO_ITEM_VIEW');
 					$jview_ops[] = JHtml::_('select.option', '2', 'FLEXI_REDIRECT_TO_ITEM_VIEW');
 
-					echo JHtml::_('select.genericlist', $jview_ops, 'allow_jview['.$row->id.']', 'size="1" class="use_select2_lib fc_skip_highlight" onchange="listItemTask(\'cb'.$i.'\',\'types.toggle_jview\'); Joomla.submitform()"', 'value', 'text', $allow_jview, 'allow_jview'.$row->id, $translate=true);
+					echo JHtml::_('select.genericlist', $jview_ops, 'allow_jview['.$row->id.']', 'size="1" onchange="listItemTask(\'cb'.$i.'\',\'types.toggle_jview\'); Joomla.submitform()"', 'value', 'text', $allow_jview, 'allow_jview'.$row->id, $translate=true);
 				?>
 			</td>
 
