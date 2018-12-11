@@ -1,38 +1,35 @@
 <?php
 /**
- * @version 1.5 stable $Id: default.php 1079 2012-01-02 00:18:34Z ggppdk $
- * @package Joomla
- * @subpackage FLEXIcontent
- * @copyright (C) 2009 Emmanuel Danan - www.vistamedia.fr
- * @license GNU/GPL v2
- * 
- * FLEXIcontent is a derivative work of the excellent QuickFAQ component
- * @copyright (C) 2008 Christoph Lukes
- * see www.schlu.net for more information
+ * @package         FLEXIcontent
+ * @version         3.3
  *
- * FLEXIcontent is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * @author          Emmanuel Danan, Georgios Papadakis, Yannick Berges, others, see contributor page
+ * @link            https://flexicontent.org
+ * @copyright       Copyright © 2018, FLEXIcontent team, All Rights Reserved
+ * @license         http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  */
 
 defined('_JEXEC') or die('Restricted access');
 
-$cid = JFactory::getApplication()->input->get('cid', array(0), 'array');
-JArrayHelper::toInteger($cid);
+use Joomla\String\StringHelper;
+use Joomla\Utilities\ArrayHelper;
 
-$edit		= JRequest::getVar('edit',true);
-$text = intval($edit) ? JText::_( 'Edit' ) : JText::_( 'New' );
+$cid = JFactory::getApplication()->input->get('cid', array(0), 'array');
+ArrayHelper::toInteger($cid);
+
+$edit = JFactory::getApplication()->input->get('edit', true);
+$text = intval($edit)
+	? JText::_('Edit')
+	: JText::_('New');
+
 $cparams = JComponentHelper::getParams ('com_media');
 $date_format = FLEXI_J16GE ? 'Y-m-d H:i:s' : '%Y-%m-%d %H:%M:%S';
 
-// Encode (UTF-8 charset) HTML entities form data so that they can be set as form field values
-JFilterOutput::objectHTMLSafe( $this->user, ENT_QUOTES, $exclude_keys = '' );
 
-if ($this->user->get('lastvisitDate') == "0000-00-00 00:00:00") {
+if ($this->row->get('lastvisitDate') == "0000-00-00 00:00:00") {
 	$lvisit = JText::_( 'Never' );
 } else {
-	$lvisit	= JHtml::_('date', $this->user->get('lastvisitDate'), $date_format);
+	$lvisit	= JHtml::_('date', $this->row->get('lastvisitDate'), $date_format);
 }
 
 // Load JS tabber lib
@@ -47,7 +44,7 @@ $js = "
 $this->document->addScriptDeclaration($js);
 ?>
 
-<script type="text/javascript">
+<script>
 	/*jQuery(document).ready(function() {
 		jQuery('input[type=password]').each(function() {
 			jQuery(this).val('');
@@ -94,11 +91,9 @@ $this->document->addScriptDeclaration($js);
 <div id="flexicontent">
 <form action="index.php?controller=users" method="post" name="adminForm" id="adminForm" class="form-validate form-horizontal" autocomplete="off">
 
+<div class="container-fluid row" style="padding: 0px !important; margin: 0px! important;">
 
-<div class="container-fluid" style="padding: 0px; margin-bottom: 24px;">
-
-
-	<div class="span6 full_width_980" style="margin-bottom: 16px !important;">
+	<div class="span6 col-6 full_width_980" style="margin-bottom: 16px !important;">
 
 		<div class="fcsep_level_h">
 			<?php echo JText::_('FLEXI_USER'); ?>
@@ -129,18 +124,19 @@ $this->document->addScriptDeclaration($js);
 				$db = JFactory::getDbo();
 				
 				$query = 'SELECT group_id FROM #__user_usergroup_map WHERE user_id = '.(int) $this->form->getValue('id');
-				$db->setQuery( $query );
-				$user_grpids = $db->loadColumn();
+				$user_grpids = $db->setQuery($query)->loadColumn();
 				
 				// Get list of Groups for dropdown filter
 				$query = 'SELECT *, id AS value, title AS text FROM #__usergroups';
-				$db->setQuery( $query );
-				$usergroups = $db->loadObjectList('id');
+				$usergroups = $db->setQuery($query)->loadObjectList('id');
 				
 				$row_groupnames = array();
-				foreach($user_grpids as $row_ugrp_id) {
+
+				foreach($user_grpids as $row_ugrp_id)
+				{
 					$row_groupnames[] = $usergroups[$row_ugrp_id]->title;
 				}
+
 				$row_groupnames = implode(', ', $row_groupnames);
 				echo '<span class="alert alert-info">'.$row_groupnames.'</span>';
 				?>
@@ -348,7 +344,7 @@ $this->document->addScriptDeclaration($js);
 	endforeach;
 ?>
 	
-	<div class="span6 full_width_980" style="margin-bottom: 16px !important;">
+	<div class="span6 col-6 full_width_980" style="margin-bottom: 16px !important;">
 
 		<?php if ($total_fsets==1) : ?>
 		<div class="fcsep_level_h">
@@ -373,13 +369,16 @@ $this->document->addScriptDeclaration($js);
 					echo '<div class="fc-mssg fc-info">'.JText::_($fieldSet->description).'</div>';
 				endif;
 
-				echo '<fieldset class="panelform">';
 				foreach ($this->jform_authorbasic->getFieldset($name) as $field) :
-					echo $field->label;
-					echo $field->input;
-				endforeach;
-				echo '</fieldset>';
-				?>
+					echo ($field->getAttribute('type')=='separator' || $field->hidden) ? $field->input : '
+					<div class="control-group">
+						<div class="control-label">'.$field->label.'</div>
+						<div class="controls">
+							' . $field->input /* non-inherited */ . '
+						</div>
+					</div>
+					';
+				endforeach; ?>
 
 			</div>
 			
@@ -388,6 +387,7 @@ $this->document->addScriptDeclaration($js);
 		</div><!-- fctabber -->
 			
 	</div>
+
 </div>
 
 
@@ -410,7 +410,7 @@ $this->document->addScriptDeclaration($js);
 					<div class="control-group">
 						<div class="control-label">'.$field->label.'</div>
 						<div class="controls">
-						'.$field->input.'
+							' . $field->input /* non-inherited */ . '
 						</div>
 					</div>
 					';
@@ -438,7 +438,7 @@ $this->document->addScriptDeclaration($js);
 						<div class="control-group">
 							<div class="control-label">'.$field->label.'</div>
 							<div class="controls">
-							'.$field->input.'
+								' . flexicontent_html::getInheritedFieldDisplay($field, $this->iparams) . '
 							</div>
 						</div>
 						';
@@ -463,7 +463,7 @@ $this->document->addScriptDeclaration($js);
 						<div class="control-group">
 							<div class="control-label">'.$field->label.'</div>
 							<div class="controls">
-							'.$field->input.'
+								' . flexicontent_html::getInheritedFieldDisplay($field, $this->iparams) . '
 							</div>
 						</div>
 						';
@@ -495,16 +495,18 @@ $this->document->addScriptDeclaration($js);
 
 						$_value = $this->params_authorcat->get($_name);
 
-						// setValue(), is ok if input property, has not been already created, otherwise we need to re-initialize (which clears input)
-						//$field->setup($field->element, $_value, $field->group);
-
+						/**
+						 * We need to set value manually here because the values are save in the 'attribs' group, but the parameters are really located in the 'templates' group ...
+						 * ...setValue(), is ok if input property, has not been already created, otherwise we need to re-initialize (which clears input)
+						 */
+						//$field->setup($this->form->getFieldXml($field->name, $field->group), $_value, $field->group);
 						$field->setValue($_value);
 
 						echo ($field->getAttribute('type')=='separator' || $field->hidden) ? $field->input : '
 						<div class="control-group">
 							<div class="control-label">'.$field->label.'</div>
 							<div class="controls">
-								'.$field->input.'
+								' . flexicontent_html::getInheritedFieldDisplay($field, $this->iparams) . '
 							</div>
 						</div>
 						';
@@ -549,29 +551,51 @@ $this->document->addScriptDeclaration($js);
 										foreach ($form_layout->getFieldset($fsname) as $field) :
 
 											if ($field->getAttribute('not_inherited')) continue;
-											if ($field->getAttribute('cssprep')) continue;
+											//if ($field->getAttribute('cssprep')) continue;
 
-											$fieldname = $field->fieldname;
-											//$value = $form_layout->getValue($fieldname, $groupname, @ $this->row->params[$fieldname]);
+											$fieldname  = $field->fieldname;
+											$cssprep    = $field->getAttribute('cssprep');
+											$labelclass = $cssprep == 'less' ? 'fc_less_parameter' : '';
 
-											$input_only = !$field->label || $field->hidden;
-											echo
-												($input_only ? '' :
-												str_replace('jform_attribs_', 'jform_layouts_'.$tmpl->name.'_',
-													$form_layout->getLabel($fieldname, $groupname)).'
-												<div class="container_fcfield">
-												').
+											// For J3.7.0+ , we have extra form methods Form::getFieldXml()
+											if ($cssprep && FLEXI_J37GE)
+											{
+												$_value = $form_layout->getValue($fieldname, $groupname, @ $this->iparams[$fieldname]);
 
-												str_replace('jform_attribs_', 'jform_layouts_'.$tmpl->name.'_', 
-													str_replace('[attribs]', '[layouts]['.$tmpl->name.']',
-														//$this->getInheritedFieldDisplay($field, $this->iparams)
-														$form_layout->getInput($fieldname, $groupname/*, $value*/)   // Value already set, no need to pass it
-													)
-												).
+												// Not only set the disabled attribute but also clear the required attribute to avoid issues with some fields (like 'color' field)
+												$form_layout->setFieldAttribute($fieldname, 'disabled', 'true', $field->group);
+												$form_layout->setFieldAttribute($fieldname, 'required', 'false', $field->group);
 
-												($input_only ? '' : '
+												$field->setup($form_layout->getFieldXml($fieldname, $field->group), $_value, $field->group);
+											}
+
+											echo ($field->getAttribute('type')=='separator' || $field->hidden || !$field->label)
+											 ? $field->input
+											 : '
+												<div class="control-group" id="'.$field->id.'-container">
+													<div class="control-label">'.
+														str_replace('class="', 'class="'.$labelclass.' ',
+															str_replace('jform_attribs_', 'jform_layouts_'.$tmpl->name.'_',
+																$form_layout->getLabel($fieldname, $groupname)
+															)
+														) . '
+													</div>
+													<div class="controls">
+														' . ($cssprep && !FLEXI_J37GE
+															? (isset($this->iparams[$fieldname]) ? '<i>' . $this->iparams[$fieldname] . '</i>' : '<i>default</i>')
+															:
+															str_replace('jform_attribs_', 'jform_layouts_'.$tmpl->name.'_',
+																str_replace('[attribs]', '[layouts]['.$tmpl->name.']',
+																	flexicontent_html::getInheritedFieldDisplay($field, $this->iparams)
+																	//$form_layout->getInput($fieldname, $groupname/*, $value*/)   // Value already set, no need to pass it
+																)
+															)
+														) .
+														($cssprep ? ' <span class="icon-info hasTooltip" title="' . JText::_('Used to auto-create a CSS styles file. To modify this, you can edit layout in template manager', true) . '"></span>' : '') . '
+													</div>
 												</div>
-												');
+											';
+
 										endforeach; ?>
 
 										</fieldset>
@@ -596,16 +620,18 @@ $this->document->addScriptDeclaration($js);
 
 								$_value = $this->params_authorcat->get($_name);
 
-								// setValue(), is ok if input property, has not been already created, otherwise we need to re-initialize (which clears input)
-								//$field->setup($field->element, $_value, $field->group);
-
+								/**
+								 * We need to set value manually here because the values are save in the 'attribs' group, but the parameters are really located in the 'templates' group ...
+								 * ...setValue(), is ok if input property, has not been already created, otherwise we need to re-initialize (which clears input)
+								 */
+								//$field->setup($this->form->getFieldXml($field->name, $field->group), $_value, $field->group);
 								$field->setValue($_value);
 
 								echo ($field->getAttribute('type')=='separator' || $field->hidden) ? $field->input : '
 								<div class="control-group">
 									<div class="control-label">'.$field->label.'</div>
 									<div class="controls">
-										'.$field->input.'
+										' . flexicontent_html::getInheritedFieldDisplay($field, $this->iparams) . '
 									</div>
 								</div>
 								';
@@ -634,7 +660,7 @@ $this->document->addScriptDeclaration($js);
 						<div class="control-group">
 							<div class="control-label">'.$field->label.'</div>
 							<div class="controls">
-								'.$field->input.'
+								' . flexicontent_html::getInheritedFieldDisplay($field, $this->iparams) . '
 							</div>
 						</div>
 						';
@@ -659,7 +685,7 @@ $this->document->addScriptDeclaration($js);
 						<div class="control-group">
 							<div class="control-label">'.$field->label.'</div>
 							<div class="controls">
-								'.$field->input.'
+								' . flexicontent_html::getInheritedFieldDisplay($field, $this->iparams) . '
 							</div>
 						</div>
 						';
@@ -674,15 +700,15 @@ $this->document->addScriptDeclaration($js);
 	<div class="fcclear"></div>
 
 	<input type="hidden" name="option" value="com_flexicontent" />
-	<input type="hidden" name="id" value="<?php echo $this->user->get('id'); ?>" />
-	<input type="hidden" name="cid[]" value="<?php echo $this->user->get('id'); ?>" />
-	<input type="hidden" name="controller" value="<?php echo $this->controller; ?>" />
-	<input type="hidden" name="view" value="<?php echo $this->view; ?>" />
+	<input type="hidden" name="id" value="<?php echo $this->row->get('id'); ?>" />
+	<input type="hidden" name="cid[]" value="<?php echo $this->row->get('id'); ?>" />
+	<input type="hidden" name="controller" value="users" />
+	<input type="hidden" name="view" value="user" />
 	<input type="hidden" name="task" value="" />
 	<input type="hidden" name="contact_id" value="" />
-	<?php if (FLEXI_J16GE ? !$this->me->authorise( 'com_users', 'email_events' ) : !$this->me->authorize( 'com_users', 'email_events' )) { ?>
-	<input type="hidden" name="sendEmail" value="0" />
-	<?php } ?>
+	<?php if (!JFactory::getUser()->authorise('com_users', 'email_events')) : ?>
+		<input type="hidden" name="sendEmail" value="0" />
+	<?php endif; ?>
 	<?php echo JHtml::_( 'form.token' ); ?>
 
 </form>

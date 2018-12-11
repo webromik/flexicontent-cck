@@ -1,71 +1,75 @@
 <?php
 /**
- * @version		$Id: users.php 1847 2014-02-16 06:29:06Z ggppdk $
- * @package		Joomla
- * @subpackage	Users
- * @copyright	Copyright (C) 2005 - 2010 Open Source Matters. All rights reserved.
- * @license		GNU/GPL, see LICENSE.php
- * Joomla! is free software. This version may have been modified pursuant
- * to the GNU General Public License, and as distributed it includes or
- * is derivative of works licensed under the GNU General Public License or
- * other free or open source software licenses.
- * See COPYRIGHT.php for copyright notices and details.
+ * @package         FLEXIcontent
+ * @version         3.3
+ *
+ * @author          Emmanuel Danan, Georgios Papadakis, Yannick Berges, others, see contributor page
+ * @link            https://flexicontent.org
+ * @copyright       Copyright © 2018, FLEXIcontent team, All Rights Reserved
+ * @license         http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  */
 
-// No direct access
-defined('_JEXEC') or die('Restricted access');
+defined('_JEXEC') or die;
+
+use Joomla\String\StringHelper;
+use Joomla\Utilities\ArrayHelper;
 
 // Register autoloader for parent controller, in case controller is executed by another component
 JLoader::register('FlexicontentController', JPATH_ADMINISTRATOR . DS . 'components' . DS . 'com_flexicontent' . DS . 'controller.php');
 
 /**
- * Users Component Controller
+ * FLEXIcontent Users Controller
  *
- * @package		Joomla
- * @subpackage	Users
- * @since 1.5
+ * NOTE: -Only- if this controller is needed by frontend URLs, then create a derived controller in frontend 'controllers' folder
+ *
+ * @since 3.3
  */
 class FlexicontentControllerUsers extends FlexicontentController
 {
 	/**
 	 * Constructor
 	 *
-	 * @params	array	Controller configuration array
+	 * @param   array   $config    associative array of configuration settings.
+	 *
+	 * @since 3.3
 	 */
-	function __construct($config = array())
+	public function __construct($config = array())
 	{
 		parent::__construct($config);
 
-		// Register Extra tasks
+		// Register task aliases
 		$this->registerTask('add',          'display');
 		$this->registerTask('edit',         'display');
 		$this->registerTask('apply',        'save');
 		$this->registerTask('save2new',     'save');
 		$this->registerTask('flogout',      'logout');
 		$this->registerTask('unblock',      'block');
+
+		// Can manage ACL
+		$this->canManage = FlexicontentHelperPerm::getPerm()->CanAuthors;
 	}
 
 
 	/**
 	 * Displays a view
 	 */
-	function display($cachable = false, $urlparams = false)
+	public function display($cachable = false, $urlparams = false)
 	{
 		$task = $this->getTask();
 
 		// Force URL variables for add / edit task
-		if ($task == 'add' || $task == 'edit')
+		if ($task === 'add' || $task === 'edit')
 		{
 			$this->input->set('hidemainmenu', 1);
 			$this->input->set('layout', 'form');
 			$this->input->set('view', 'user');
-			$this->input->set('edit', $task == 'edit');
+			$this->input->set('edit', $task === 'edit');
 		}
 
 		$view = $this->input->get('view', 'users', 'cmd');
 
 		// Force 'form' layout if displaying singular view
-		if ($view == 'user')
+		if ($view === 'user')
 		{
 			$this->input->set('layout', 'form');
 		}
@@ -93,15 +97,14 @@ class FlexicontentControllerUsers extends FlexicontentController
 		$SiteName	= $config->get('sitename');
 
 		// Create a new JUser object for the given user id, and calculate / retrieve some information about the user
-		$id = JRequest::getVar('id', 0, 'post', 'int');
+		$id   = $this->input->getInt('id', 0);
 		$user = new JUser($id);
 
 		$curIsSuperAdmin = $me->authorise('core.admin', 'root.1');
 		$isSuperAdmin = $user->authorise('core.admin', 'root.1');
 		$saving_myself = $user->id == $me->id;
 
-		$post = JRequest::get('post');
-		$data = & $post['jform'];
+		$data = $this->input->get('jform', array(), 'array');
 
 		// Merge template FIELDS-set this should include at least 'clayout' and optionally 'clayout_mobile' parameters
 		if (!empty($data['templates']))
@@ -193,7 +196,7 @@ class FlexicontentControllerUsers extends FlexicontentController
 		{
 			case 'apply':
 				$msg = JText::sprintf('Successfully Saved changes to User', $user->get('name'));
-				$this->setRedirect('index.php?option=com_flexicontent&controller=users&view=user&task=' . $ctrl . 'edit&cid[]=' . $user->get('id'), $msg);
+				$this->setRedirect('index.php?option=com_flexicontent&controller=users&view=user&task=' . $ctrl . 'edit&id=' . $user->get('id'), $msg);
 				break;
 
 			case 'save2new':
@@ -211,9 +214,13 @@ class FlexicontentControllerUsers extends FlexicontentController
 
 
 	/**
-	 * Removes the record(s) from the database
+	 * Logic to delete records
+	 *
+	 * @return void
+	 *
+	 * @since 3.3
 	 */
-	function remove()
+	public function remove()
 	{
 		// Check for request forgeries
 		JSession::checkToken('request') or jexit(JText::_('JINVALID_TOKEN'));
@@ -223,8 +230,8 @@ class FlexicontentControllerUsers extends FlexicontentController
 		$me    = JFactory::getUser();
 		$curIsSuperAdmin = $me->authorise('core.admin', 'root.1');
 
-		$cid = JRequest::getVar('cid', array(), '', 'array');
-		JArrayHelper::toInteger($cid);
+		$cid = $this->input->get('cid', array(), 'array');
+		$cid = ArrayHelper::toInteger($cid);
 
 		if (count($cid) < 1)
 		{
@@ -320,9 +327,9 @@ class FlexicontentControllerUsers extends FlexicontentController
 
 		if (!$check_uids)
 		{
-			$cid = JRequest::getVar('cid', array(), '', 'array');
-			JArrayHelper::toInteger($cid);
-			$block = JRequest::getVar('task') == 'block';
+			$cid   = $this->input->get('cid', array(), 'array');
+			$cid   = ArrayHelper::toInteger($cid);
+			$block = $this->input->getCmd('task') === 'block';
 		}
 		else
 		{
@@ -411,13 +418,13 @@ class FlexicontentControllerUsers extends FlexicontentController
 		// Check for request forgeries
 		JSession::checkToken('request') or jexit(JText::_('JINVALID_TOKEN'));
 
-		$app = JFactory::getApplication();
-		$db  = JFactory::getDbo();
-		$task   = $this->getTask();
-		$cids   = JRequest::getVar('cid', array(), '', 'array');
-		$client = JRequest::getVar('client', 0, '', 'int');
+		$app    = JFactory::getApplication();
+		$db     = JFactory::getDbo();
 
-		JArrayHelper::toInteger($cids);
+		$task   = $this->getTask();
+		$cids   = $this->input->get('cid', array(), 'array');
+		$cids   = ArrayHelper::toInteger($cids);
+		$client = $this->input->getInt('client', 0);
 
 		if (count($cids) < 1)
 		{
@@ -430,12 +437,12 @@ class FlexicontentControllerUsers extends FlexicontentController
 		{
 			$options = array();
 
-			if ($task == 'logout' || $task == 'block')
+			if ($task === 'logout' || $task === 'block')
 			{
 				$options['clientid'][] = 0; // Site
 				$options['clientid'][] = 1; // administrator
 			}
-			elseif ($task == 'flogout')
+			elseif ($task === 'flogout')
 			{
 				$options['clientid'][] = $client;
 			}
@@ -463,11 +470,10 @@ class FlexicontentControllerUsers extends FlexicontentController
 	}
 
 
-
 	function contact()
 	{
-		$contact_id = JRequest::getVar('contact_id', '', 'post', 'int');
-		$this->setRedirect('index.php?option=com_contact&task=edit&cid[]=' . $contact_id);
-	}
+		$contact_id = $this->input->getInt('contact_id', 0);
 
+		$this->setRedirect('index.php?option=com_contact&task=edit&id=' . $contact_id);
+	}
 }

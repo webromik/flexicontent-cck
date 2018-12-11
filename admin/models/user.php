@@ -1,23 +1,25 @@
 <?php
 /**
- * @package     Joomla.Administrator
- * @subpackage  com_flexicontent
+ * @package         FLEXIcontent
+ * @version         3.3
  *
- * @copyright   Copyright (C) 2005 - 2017 Open Source Matters, Inc. All rights reserved.
- * @license     GNU General Public License version 2 or later; see LICENSE.txt
+ * @author          Emmanuel Danan, Georgios Papadakis, Yannick Berges, others, see contributor page
+ * @link            https://flexicontent.org
+ * @copyright       Copyright © 2018, FLEXIcontent team, All Rights Reserved
+ * @license         http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  */
 
-defined('_JEXEC') or die;
+defined('_JEXEC') or die('Restricted access');
 
 use Joomla\Registry\Registry;
 use Joomla\Utilities\ArrayHelper;
+
 jimport('legacy.model.admin');
 require_once(JPATH_ADMINISTRATOR.DS.'components'.DS.'com_users'.DS.'models'.DS.'user.php');
 
 /**
  * User model.
  *
- * @since  1.6
  */
 class FlexicontentModelUser extends UsersModelUser
 {
@@ -46,7 +48,7 @@ class FlexicontentModelUser extends UsersModelUser
 	public function getForm($data = array(), $loadData = true)
 	{
 		$pluginParams = new Registry;
-		
+
 		if (JPluginHelper::isEnabled('user', 'joomla'))
 		{
 			$plugin = JPluginHelper::getPlugin('user', 'joomla');
