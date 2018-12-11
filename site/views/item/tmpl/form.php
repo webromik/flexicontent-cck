@@ -1,22 +1,17 @@
 <?php
 /**
- * @version 1.5 stable $Id$
- * @package Joomla
- * @subpackage FLEXIcontent
- * @copyright (C) 2009 Emmanuel Danan - www.vistamedia.fr
- * @license GNU/GPL v2
- * 
- * FLEXIcontent is a derivative work of the excellent QuickFAQ component
- * @copyright (C) 2008 Christoph Lukes
- * see www.schlu.net for more information
+ * @package         FLEXIcontent
+ * @version         3.3
  *
- * FLEXIcontent is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * @author          Emmanuel Danan, Georgios Papadakis, Yannick Berges, others, see contributor page
+ * @link            https://flexicontent.org
+ * @copyright       Copyright © 2018, FLEXIcontent team, All Rights Reserved
+ * @license         http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  */
 
 defined( '_JEXEC' ) or die( 'Restricted access' );
+
+use Joomla\String\StringHelper;
 
 $app   = JFactory::getApplication();
 $user  = JFactory::getUser();
@@ -63,10 +58,6 @@ $btn_class = 'btn';  // 'fc_button';
 $tip_class = ' hasTooltip';
 $lbl_class = ' ' . $this->params->get('form_lbl_class_fe', '');
 
-// Calculate refer parameter for returning to this page when user ends editing/submitting
-$return = JFactory::getApplication()->input->getString('return', '');
-$referer = $return ? base64_decode( $return ) : @ $_SERVER['HTTP_REFERER'];
-$referer_encoded = htmlspecialchars($referer, ENT_COMPAT, 'UTF-8');
 
 $lang = JFactory::getApplication()->input->getCmd('lang', '');
 $site_languages = FLEXIUtilities::getLanguages();
@@ -127,7 +118,7 @@ if ( $this->perms['cantags'] && $this->params->get('usetags_fe', 1)==1 )
 			
 			tagInput.keydown(function(event)
 			{
-				if( (event.keyCode==13) )
+				if (event.keyCode == 13)
 				{
 					var el = jQuery(event.target);
 					if (el.val()=='') return false; // No tag to assign / create
@@ -139,7 +130,8 @@ if ( $this->perms['cantags'] && $this->params->get('usetags_fe', 1)==1 )
 					var data_name = el.data('tagname');
 					//window.console.log( 'User input: '+el.val() + ' data-tagid: ' + data_id + ' data-tagname: \"'+ data_name + '\"');
 					
-					if (el.val() == data_name && data_id!='' && data_id!='0') {
+					if (el.val() == data_name && data_id != '' && data_id != '0')
+					{
 						//window.console.log( 'Assigning found tag: (' + data_id + ', \"' + data_name + '\")');
 						addToList(data_id, data_name);
 						el.autocomplete('close');
@@ -154,41 +146,56 @@ if ( $this->perms['cantags'] && $this->params->get('usetags_fe', 1)==1 )
 					return false;
 				}
 			});
-			
-			jQuery.ui.autocomplete( {
-				source: function( request, response ) {
+
+			var fcTagsCache = {};
+
+			jQuery.ui.autocomplete({
+				source: function( request, response )
+				{
 					var el   = jQuery(this.element);
 					var term = request.term;
+
+					if (term in fcTagsCache)
+					{
+						response(fcTagsCache[term]);
+						return;
+					}
+
 					//window.console.log( 'Getting tags for \"' + term + '\" ...');
 					jQuery.ajax({
-						/*
-						url: '".JUri::base(true)."/index.php?option=com_flexicontent&". JSession::getFormToken() ."=1" . ($sef_lang ? '&lang=' . $sef_lang : '') . "',
-						*/
-						url: '".JUri::base(true)."/components/com_flexicontent/tasks/core.php?". JSession::getFormToken() ."=1',
+						url: '".JUri::root(true)."/components/com_flexicontent/tasks/core.php?". JSession::getFormToken() ."=1',
 						dataType: 'json',
 						data: {
-							q: request.term,
+							q: term,
 							task: 'viewtags',
 							format: 'json'
 						},
-						success: function( data ) {
+						success: function(data)
+						{
 							//window.console.log( '... received tags for \"' + term + '\"');
-							response( jQuery.map( data, function( item ) {
-								if (el.val()==item.name)
+							var response_data = jQuery.map(data, function(item)
+							{
+								if (el.val() == item.name)
 								{
 									//window.console.log( 'Found exact TAG match, (' + item.id + ', \"' + item.name + '\")');
 									el.data('tagid',   item.id);
 									el.data('tagname', item.name);
 								}
 								return jQuery('#ultagbox').find('input[value=\"'+item.id+'\"]').length > 0 ? null : { label: item.name, value: item.id };
-							}));
+							});
+
+							fcTagsCache[term] = response_data;
+							response(response_data);
 						}
 					});
 				},
+
 				delay: 200,
-				minLength: 1,
-				focus: function ( event, ui ) {
-					//window.console.log( (ui.item  ?  'current ID: ' + ui.item.value + 'current Label: ' + ui.item.label :  'Nothing selected') );
+				minLength: 0,
+
+				focus: function ( event, ui )
+				{
+					//window.console.log( (ui.item  ?  'current ID: ' + ui.item.value + ' , current Label: ' + ui.item.label :  'Nothing selected') );
 					
 					var el = jQuery(event.target);
 					if (ui.item.value!='' && ui.item.value!='0')
@@ -200,23 +207,34 @@ if ( $this->perms['cantags'] && $this->params->get('usetags_fe', 1)==1 )
 					
 					event.preventDefault();  // Prevent default behaviour of setting 'ui.item.value' into the input
 				},
-				select: function( event, ui ) {
+
+				select: function( event, ui )
+				{
 					//window.console.log( 'Selected: ' + ui.item.label + ', input was \'' + this.value + '\'');
 					
 					var el = jQuery(event.target);
-					if (ui.item.value!='' && ui.item.value!='0') {
+					if (ui.item.value != '' && ui.item.value != '0')
+					{
 						addToList(ui.item.value, ui.item.label);
 						el.val('');  //clear existing value
 					}
 					
 					event.preventDefault();  // Prevent default behaviour of setting 'ui.item.value' into the input and triggering change event
 				},
+
 				//change: function( event, ui ) { window.console.log( 'autocomplete change()' ); },
 				//open: function() { window.console.log( 'autocomplete open()' ); },
 				//close: function() { window.console.log( 'autocomplete close()' ); },
 				//search: function() { window.console.log( 'autocomplete search()' ); }
 			}, tagInput.get(0) );
-			
+
+			// Call search method on focus to allow immediate search
+			tagInput.focus(function () {
+				jQuery(this).autocomplete('search', this.value);
+			});
+
+			// Call autocomplete.search method to load and cache all tags up to a maximum ... e.g. 500
+			tagInput.attr('readonly', 'readonly').autocomplete('search', '').autocomplete('close').removeAttr('readonly');
 		});
 
 
@@ -224,6 +242,7 @@ if ( $this->perms['cantags'] && $this->params->get('usetags_fe', 1)==1 )
 		{
 			// Prefer quick tag selector if it exists
 			var cmtag = jQuery('#quick-tag-'+id);
+
 			if (cmtag.length)
 			{
 				cmtag.attr('checked', 'checked').trigger('change');
@@ -231,7 +250,10 @@ if ( $this->perms['cantags'] && $this->params->get('usetags_fe', 1)==1 )
 			else
 			{
 				var obj = jQuery('#ultagbox');
-				if (obj.find('input[value=\"'+id+'\"]').length > 0) return;
+				if (obj.find('input[value=\"'+id+'\"]').length > 0)
+				{
+					return;
+				}
 				obj.append('<li class=\"tagitem\"><span>'+name+'</span><input type=\"hidden\" name=\"jform[tag][]\" value=\"'+id+'\" /><a href=\"javascript:;\" class=\"deletetag\" onclick=\"javascript:deleteTag(this);\" title=\"' + Joomla.JText._('FLEXI_DELETE_TAG') + '\"></a></li>');
 			}
 		}
@@ -1196,31 +1218,45 @@ if ( $typeid && $this->params->get('selecttheme_fe') ) : ?>
 					';
 				}
 			endforeach; ?>
-			
+
 			<div class="fcclear"></div>
 			<div class="fc-success fc-mssg" style="font-size: 12px; margin: 8px 0 !important;" id="__content_type_default_layout__">
 				<?php echo JText::_( 'FLEXI_USING_LAYOUT_DEFAULTS' ); ?>
 			</div>
 		
 		<?php $captured['layout_selection'] = ob_get_clean(); endif;
-		
-		
-		
+
+
+
 		if ( $this->params->get('selecttheme_fe') >= 2 ) : ob_start(); ?>
 
-			<div class="fc-sliders-plain-outer">
+			<?php $item_layout = $this->row->itemparams->get('ilayout'); ?>
+
+			<div class="fc-sliders-plain-outer <?php echo $item_layout ? 'fc_preloaded' : ''; ?>">
 				<?php
-				echo JHtml::_('sliders.start','theme-sliders-'.$this->form->getValue("id"), array('useCookie'=>1));
+				$slider_set_id = 'theme-sliders-' . $this->form->getValue('id');
+				//echo JHtml::_('sliders.start', $slider_set_id, array('useCookie'=>1));
+				echo JHtml::_('bootstrap.startAccordion', $slider_set_id, array(/*'active' => ''*/));
+
 				$groupname = 'attribs';  // Field Group name this is for name of <fields name="..." >
-				$item_layout = $this->row->itemparams->get('ilayout');
 				
 				foreach ($this->tmpls as $tmpl) :
 					
 					$form_layout = $tmpl->params;
-					$label = '<span class="btn"><i class="icon-edit"></i>'.JText::_( 'FLEXI_PARAMETERS_THEMES_SPECIFIC' ) . ' : ' . $tmpl->name.'</span>';
-					echo JHtml::_('sliders.panel', $label, $tmpl->name.'-'.$groupname.'-options');
-					
-					if (!$item_layout || $tmpl->name != $item_layout) continue;
+					$slider_title = '
+						<span class="btn"><i class="icon-edit"></i>
+							' . JText::_('FLEXI_PARAMETERS_THEMES_SPECIFIC') . ' : ' . $tmpl->name . '
+						</span>';
+					$slider_id = $tmpl->name . '-' . $groupname . '-options';
+
+					//echo JHtml::_('sliders.panel', $slider_title, $slider_id);
+					echo JHtml::_('bootstrap.addSlide', $slider_set_id, $slider_title, $slider_id);
+
+					if (!$item_layout || $tmpl->name !== $item_layout)
+					{
+						echo JHtml::_('bootstrap.endSlide');
+						continue;
+					}
 					
 					$fieldSets = $form_layout->getFieldsets($groupname);
 					foreach ($fieldSets as $fsname => $fieldSet) : ?>
@@ -1235,40 +1271,62 @@ if ( $typeid && $this->params->get('selecttheme_fe') ) : ?>
 						endif;
 						
 						foreach ($form_layout->getFieldset($fsname) as $field) :
-							
+
 							if ($field->getAttribute('not_inherited')) continue;
-							if ($field->getAttribute('cssprep')) continue;
-							
-							$fieldname = $field->fieldname;
-							//$value = $form_layout->getValue($fieldname, $groupname, $this->row->itemparams->get($fieldname));
-							
-							$input_only = !$field->label || $field->hidden;
-							echo
-								($input_only ? '' :
-								str_replace('class="', 'class="' . $lbl_class . ' label-fcinner ',
-									str_replace(' for="', ' data-for="',
-										str_replace('jform_attribs_', 'jform_layouts_'.$tmpl->name.'_',
-											$form_layout->getLabel($fieldname, $groupname)))).'
-								<div class="container_fcfield">
-								').
-								
-								str_replace('jform_attribs_', 'jform_layouts_'.$tmpl->name.'_', 
-									str_replace('[attribs]', '[layouts]['.$tmpl->name.']',
-										$form_layout->getInput($fieldname, $groupname/*, $value*/)   // Value already set, no need to pass it
-									)
-								).
-								
-								($input_only ? '' : '
+							//if ($field->getAttribute('cssprep')) continue;
+
+							$fieldname  = $field->fieldname;
+							$cssprep    = $field->getAttribute('cssprep');
+							$labelclass = $cssprep == 'less' ? 'fc_less_parameter' : '';
+
+							// For J3.7.0+ , we have extra form methods Form::getFieldXml()
+							if ($cssprep && FLEXI_J37GE)
+							{
+								$_value = $form_layout->getValue($fieldname, $groupname, $this->row->parameters->get($fieldname));
+								$form_layout->setFieldAttribute($fieldname, 'disabled', 'true', $field->group);
+								$field->setup($form_layout->getFieldXml($fieldname, $field->group), $_value, $field->group);
+							}
+
+							echo ($field->getAttribute('type')=='separator' || $field->hidden || !$field->label)
+							 ? $field->input
+							 : '
+								<div class="control-group" id="'.$field->id.'-container">
+									<div class="control-label">'.
+										str_replace('class="', 'class="'.$labelclass.' ',
+											str_replace(' for="', ' data-for="',
+												str_replace('jform_attribs_', 'jform_layouts_'.$tmpl->name.'_',
+													$form_layout->getLabel($fieldname, $groupname)
+												)
+											)
+										) . '
+									</div>
+									<div class="controls">
+										' . ($cssprep && !FLEXI_J37GE
+											? (isset($this->iparams[$fieldname]) ? '<i>' . $this->iparams[$fieldname] . '</i>' : '<i>default</i>')
+											:
+											str_replace('jform_attribs_', 'jform_layouts_'.$tmpl->name.'_',
+												str_replace('[attribs]', '[layouts]['.$tmpl->name.']',
+													flexicontent_html::getInheritedFieldDisplay($field, $this->row->parameters)
+													//$form_layout->getInput($fieldname, $groupname/*, $value*/)   // Value already set, no need to pass it
+												)
+											)
+										) .
+										($cssprep ? ' <span class="icon-info hasTooltip" title="' . JText::_('Used to auto-create a CSS styles file. To modify this, you can edit layout in template manager', true) . '"></span>' : '') . '
+									</div>
 								</div>
-								');
+							';
+
 						endforeach; ?>
 						
 						</fieldset>
 						
 					<?php endforeach; //fieldSets ?>
+					<?php echo JHtml::_('bootstrap.endSlide'); ?>
+
 				<?php endforeach; //tmpls ?>
 				
-				<?php echo JHtml::_('sliders.end'); ?>
+				<?php echo JHtml::_('bootstrap.endAccordion'); //echo JHtml::_('sliders.end'); ?>
+
 			</div>
 		<?php
 		$captured['layout_params'] = ob_get_clean(); endif; ?>
@@ -1301,41 +1359,46 @@ if ($this->fields && $typeid) :
 		$noplugin = '<div class="fc-mssg-inline fc-warning" style="margin:0 2px 6px 2px; max-width: unset;">'.JText::_( 'FLEXI_PLEASE_PUBLISH_THIS_PLUGIN' ).'</div>';
 		$row_k = 0;
 
-		foreach ($this->fields as $field_name => $field)
-		{
-			if ( $field->iscore &&  isset($tab_fields['fman'][ $field->field_type ]) )
+		foreach ($this->fields as $field_name => $field) :
+
+			if ($field->iscore && isset($tab_fields['fman'][$field->field_type]))
 			{
 				// Print any CORE fields that are placed by field manager
-				if ( isset($captured[ $field->field_type ]) ) {
-					echo $captured[ $field->field_type ]; unset($captured[ $field->field_type ]);
-					echo "\n".'<div class="fcclear"></div>'."\n";
+				if (isset($captured[$field->field_type]))
+				{
+					echo $captured[$field->field_type];
+					unset($captured[$field->field_type]);
+					echo "\n" . '<div class="fcclear"></div>' . "\n";
 				}
 				continue;
 			}
 			
-			else if (
+			elseif (
 				// SKIP frontend hidden fields 
-				($field->iscore && $field->field_type!='maintext')   ||   $field->parameters->get('frontend_hidden')   ||   in_array($field->formhidden, array(1,3))   ||
+				($field->iscore && empty($field->html))   ||   $field->parameters->get('frontend_hidden')   ||   in_array($field->formhidden, array(1,3))   ||
 				
 				// Skip hide-if-empty fields from this listing
 				( empty($field->html) && ($field->formhidden==4 || in_array($field->field_type, $hide_ifempty_fields)) )
 			) continue;
 			
-			// check to SKIP (hide) field e.g. description field ('maintext' field type), alias field etc
-			if ( $this->tparams->get('hide_'.$field->field_type) ) continue;
+			// Check to SKIP (hide) field e.g. description field ('maintext' field type), alias field etc
+			if ($this->tparams->get('hide_'.$field->field_type))
+			{
+				continue;
+			}
 
 
 			$not_in_tabs = "";
 
 
-			if ($field->field_type=='groupmarker')
+			if ($field->field_type === 'groupmarker')
 			{
 				echo $field->html;
 				continue;
 			}
 
 
-			else if ($field->field_type=='coreprops')
+			elseif ($field->field_type === 'coreprops')
 			{
 				$props_type = $field->parameters->get('props_type');
 				if ( isset($tab_fields['fman'][$props_type]) ) {
@@ -1347,7 +1410,7 @@ if ($this->fields && $typeid) :
 			}
 
 
-			else if ($field->field_type=='image')
+			elseif ($field->field_type === 'image')
 			{
 				if ($field->parameters->get('image_source')==-1)
 				{
@@ -1358,7 +1421,7 @@ if ($this->fields && $typeid) :
 			}
 
 
-			else if ($field->field_type=='weblink')
+			elseif ($field->field_type === 'weblink')
 			{
 				if ($field->parameters->get('link_source')==-1)
 				{
@@ -1371,7 +1434,7 @@ if ($this->fields && $typeid) :
 
 			// Check if 'Description' field will NOT be placed via fields manager placement/ordering,
 			// but instead it will be inside a custom TAB or inside the 'Description' TAB (default)
-			else if ( $field->field_type=='maintext')
+			elseif ($field->field_type === 'maintext')
 			{
 				if (isset($all_tab_fields['text']) )
 				{
@@ -1390,21 +1453,28 @@ if ($this->fields && $typeid) :
 				$label_attrs = 'class="' . $lbl_class . '"';
 			}
 
-			// Some fields may force a container width ?
-			$display_label_form = $field->parameters->get('display_label_form', 1);
 			$row_k = 1 - $row_k;
-			$full_width = $display_label_form==0 || $display_label_form==2 || $display_label_form==-1;
-			$width = $field->parameters->get('container_width', ($full_width ? '100%!important;' : false) );
-			$container_width = empty($width) ? '' : 'width:' .$width. ($width != (int)$width ? 'px!important;' : '');
-			$container_class = "fcfield_row".$row_k." container_fcfield container_fcfield_id_".$field->id." container_fcfield_name_".$field->name;
+
+			// Some fields may force a container width ?
+			$display_label_form = (int) $field->parameters->get('display_label_form', 1);
+			$full_width = $display_label_form === 0 || $display_label_form === 2 || $display_label_form === -1;
+
+			$width = $field->parameters->get('container_width', ($full_width ? '100% !important;' : false));
+
+			$container_width = empty($width)
+				? ''
+				: 'width:' . $width . ($width != (int) $width ? 'px !important;' : '');
+			$container_class = 'fcfield_row' . $row_k . ' container_fcfield container_fcfield_id_' . $field->id . ' container_fcfield_name_' . $field->name;
 			?>
 			
 			<div class="fcclear"></div>
+
 			<span class="label-fcouter" id="label_outer_fcfield_<?php echo $field->id; ?>">
 				<label id="label_fcfield_<?php echo $field->id; ?>" style="<?php echo $display_label_form < 1 ? 'display:none;' : ''; ?>" data-for="<?php echo 'custom_'.$field->name;?>" <?php echo $label_attrs;?> >
 					<?php echo $field->label; ?>
 				</label>
 			</span>
+
 			<?php if($display_label_form==2):  ?>
 				<div class="fcclear"></div>
 			<?php endif; ?>
@@ -1490,8 +1560,9 @@ if ($this->fields && $typeid) :
 			{
 				$captured['text'] = ob_get_clean();
 			}
-		}
 		?>
+
+		<?php endforeach; ?>
 		
 	</div>
 
@@ -1917,7 +1988,7 @@ if ( count($tab_fields['below']) || count($captured) ) : ?>
 		<?php echo JHtml::_( 'form.token' ); ?>
 		<input type="hidden" name="task" id="task" value="" />
 		<input type="hidden" name="option" value="com_flexicontent" />
-		<input type="hidden" name="referer" value="<?php echo $referer_encoded; ?>" />
+		<input type="hidden" name="referer" value="<?php echo htmlspecialchars($this->referer, ENT_COMPAT, 'UTF-8'); ?>" />
 		<?php if ( $isnew && $typeid ) : ?>
 			<input type="hidden" name="jform[type_id]" value="<?php echo $typeid; ?>" />
 		<?php endif;?>
