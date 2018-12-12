@@ -445,6 +445,7 @@ class FlexicontentViewItem extends JViewLegacy
 		if ($useAssocs)  $this->lang_assocs = $langAssocs;
 		$this->langs   = $langs;
 		$this->params  = $page_params;
+		$this->iparams = $model->getComponentTypeParams();
 		$this->lists   = $lists;
 		$this->typesselected = $typesselected;
 
@@ -1298,5 +1299,18 @@ class FlexicontentViewItem extends JViewLegacy
 				<span class="caret"></span>
 			</button>';
 		flexicontent_html::addToolBarDropMenu($btn_arr, 'action_btns_group', $drop_btn);
+	}
+
+
+	/**
+	 * Method to get the display of field while showing the inherited value
+	 *
+	 * @return	int
+	 *
+	 * @since	3.3.0
+	 */
+	public function getFieldInheritedDisplay($field, $params)
+	{
+		return flexicontent_html::getInheritedFieldDisplay($field, $params);
 	}
 }

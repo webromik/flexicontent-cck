@@ -5,7 +5,7 @@
  *
  * @author          Emmanuel Danan, Georgios Papadakis, Yannick Berges, others, see contributor page
  * @link            https://flexicontent.org
- * @copyright       Copyright Â© 2018, FLEXIcontent team, All Rights Reserved
+ * @copyright       Copyright © 2018, FLEXIcontent team, All Rights Reserved
  * @license         http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  */
 
@@ -2203,5 +2203,18 @@ class FlexicontentViewItem extends JViewLegacy
 		}
 
 		return $return;
+	}
+
+
+	/**
+	 * Method to get the display of field while showing the inherited value
+	 *
+	 * @return	int
+	 *
+	 * @since	3.3.0
+	 */
+	public function getFieldInheritedDisplay($field, $params)
+	{
+		return flexicontent_html::getInheritedFieldDisplay($field, $params);
 	}
 }

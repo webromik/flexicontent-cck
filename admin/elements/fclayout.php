@@ -9,16 +9,22 @@
 
 defined('JPATH_PLATFORM') or die;
 
+use Joomla\String\StringHelper;
+use Joomla\Utilities\ArrayHelper;
+
 // Load the helper classes
 if (!defined('DS'))  define('DS',DIRECTORY_SEPARATOR);
 require_once(JPATH_ROOT.DS.'components'.DS.'com_flexicontent'.DS.'classes'.DS.'flexicontent.helper.php');
 
 jimport('joomla.filesystem.folder');  // JFolder
 jimport('joomla.filesystem.file');    // JFile
+
 jimport('cms.html.html');      // JHtml
+jimport('cms.html.select');    // JHtmlSelect
+jimport('joomla.form.field');  // JFormField
 
 jimport('joomla.form.helper'); // JFormHelper
-JFormHelper::loadFieldClass('list');   // JFormFieldList
+JFormHelper::loadFieldClass('groupedlist');   // JFormFieldGroupedList
 
 // Load JS tabber lib
 JFactory::getDocument()->addScriptVersion(JUri::root(true).'/components/com_flexicontent/assets/js/tabber-minimized.js', FLEXI_VHASH);
@@ -32,7 +38,7 @@ JFactory::getDocument()->addScriptDeclaration(' document.write(\'<style type="te
  * @subpackage  Form
  * @since       1.5
  */
-class JFormFieldFclayout extends JFormFieldList
+class JFormFieldFclayout extends JFormFieldGroupedList
 {
 	/**
 	 * The form field type.
@@ -76,8 +82,8 @@ class JFormFieldFclayout extends JFormFieldList
 		) $view = 'module';
 
 		$cid = $jinput->get('cid', array(0), 'array');
-		JArrayHelper::toInteger($cid);
-		$pk = $cid[0];
+		$cid = ArrayHelper::toInteger($cid);
+		$pk = (int) $cid[0];
 		if (!$pk) $pk = $jinput->get('id', 0, 'int');
 		
 		
@@ -245,9 +251,10 @@ class JFormFieldFclayout extends JFormFieldList
 				continue;
 			}
 
-			$text = $stripPrefix ? str_replace($stripPrefix, '', $value) : $file;
+			$val = $stripPrefix ? str_replace($stripPrefix, '', $file) : $file;
+			$txt = $val;
 
-			$groups['custom']['items'][] = (object) array('text' => $text, 'value' => $file);
+			$groups['custom']['items'][] = (object) array('text' => $txt, 'value' => $val);
 			$layout_files[] = $file;
 
 		}
@@ -390,8 +397,12 @@ class JFormFieldFclayout extends JFormFieldList
 		// Container of parameters
 		$tmpl_container = (string) @ $attributes['tmpl_container'];
 
-		// Add JS code to display parameters, either via 'file' or 'inline'
-		// For modules we can not use method 'file' (external xml file), because J2.5+ does form validation on the XML file ...
+		/**
+		 * Add JS code to display parameters, either via 'file' or 'inline'
+		 * 'file' means make an AJAX call to read the respective XML file, then set the the target in the same container (TAB)
+		 * 'inline' means parameters of all layout were specified inside the main XML, thus just hide all containers (TABs) and display only the appropriate one
+		 */
+
 		$params_source = (string) @ $attributes['params_source'];
 
 flexicontent_html::loadJQuery();
@@ -436,7 +447,7 @@ function fc_getLayout_".$_name."(el, initial)
 	var filename = selected_option.data('filename');
 	var layout_name = filename ? filename : selected_option.val();
 
-	var _loading_img = '<img src=\"components/com_flexicontent/assets/images/ajax-loader.gif\" align=\"center\">';
+	var _loading_img = '<img src=\"components/com_flexicontent/assets/images/ajax-loader.gif\" style=\"vertical-align: middle;\">';
 	bs_tab_handle.length
 		? panel_header.html('<a href=\"javascript:void(0);\"><span> " . $layout_label . ": '+_loading_img+'</span></a>')
 		: panel_header.html('" . '<i class="'.$icon_class.'"></i> ' . $layout_label . ": " . "' + _loading_img);
@@ -444,7 +455,7 @@ function fc_getLayout_".$_name."(el, initial)
 
 	jQuery.ajax({
 		type: 'GET',
-		url: 'index.php?option=com_flexicontent&task=templates.getlayoutparams&ext_option=".$option."&ext_view=".$view."&ext_name=".$ext_name."&layout_pfx=".$layout_pfx."&ext_id=".$pk."&directory=".$directory."&layout_name='+layout_name+'&format=raw',
+		url: 'index.php?option=com_flexicontent&task=templates.getlayoutparams&ext_option=".$option."&ext_view=".$view."&ext_name=".$ext_name."&layout_pfx=".$layout_pfx."&ext_id=".$pk."&directory=".$directory."&layout_name='+layout_name+'&format=raw&" . JSession::getFormToken() . "=1',
 		success: function(str) {
 			if (bs_tab_handle.length)
 			{
@@ -505,11 +516,11 @@ function fc_getLayout_".$_name."(el, initial)
 ")."
 
 window.addEvent('domready', function(){
-	var el = jQuery('#jform_".($view=='field' ? "attribs_" : "params_").$_name."');
+	var el = document.getElementById('jform_".($view=='field' ? "attribs_" : "params_").$_name."');
 	fc_getLayout_".$_name."(el, 1);
 
 	// In case on DOM ready the element is intialized, retry on this custom event
-	el.on('initialize-fc-element', function(){
+	el.addEventListener('initialize-fc-element', function() {
 		fc_getLayout_".$_name."(el, 1);
 	});
 });
