@@ -2014,19 +2014,24 @@ class plgFlexicontent_fieldsImage extends FCField
 
 			$image_subpath = $value['originalname'] = isset($value['originalname']) ? trim($value['originalname']) : '';
 
+			// Check if image file is a URL (e.g. we are using Media URLs to videos)
+			$isURL = preg_match("#^(?:[a-z]+:)?//#", $image_subpath);
+
 			// Skip empty value, adding an empty placeholder if field inside in field group
-			if ( !strlen($image_subpath) )
+			if (!strlen($image_subpath))
 			{
-				if ( $is_ingroup )
+				if ($is_ingroup)
 				{
 					$field->{$prop}[]	= '';
 				}
+
 				continue;
 			}
+
 			$i++;
 
 			// Some types contain sub-path together with the image name (relative to joomla folder)
-			if ( is_array($orig_urlpath) )
+			if (is_array($orig_urlpath))
 			{
 				$orig_urlpath[$i] = str_replace('\\', '/', dirname($image_subpath));
 			}
@@ -2036,37 +2041,53 @@ class plgFlexicontent_fieldsImage extends FCField
 			{
 				if ($dirname = dirname($image_subpath))
 				{
-					$orig_urlpath .=  '/'. str_replace('\\', '/', $dirname);
+					if ($dirname !== '.')
+					{
+						$orig_urlpath .=  '/' . str_replace('\\', '/', $dirname);
+					}
 				}
 			}
 
+			// Get image's filename out of image path
 			$image_name = basename($image_subpath);
 
-			// ***
-			// Create thumbnails urls, note thumbnails have already been verified above
-			// ***
+
+			/**
+			 * Create thumbnails urls, note thumbnails have already been verified above
+			 */
 
 			// Optional properties
-			$title	= ($usetitle && isset($value['title'])) ? $value['title'] : '';
-			$alt	= ($usealt && isset($value['alt'])) ? $value['alt'] : $alt_image_prefix . ($n + 1);
-			$desc	= ($usedesc && isset($value['desc'])) ? $value['desc'] : '';
+			$title = $usetitle && isset($value['title']) ? $value['title'] : '';
+			$alt   = $usealt && isset($value['alt']) ? $value['alt'] : $alt_image_prefix . ($n + 1);
+			$desc  = $usedesc && isset($value['desc']) ? $value['desc'] : '';
 
 			// Optional custom properties
-			$cust1	= ($usecust1 && isset($value['cust1'])) ? $value['cust1'] : '';
-			$desc .= $cust1 ? $cust1_label.': '.$cust1 : '';  // ... Append custom properties to description
-			$cust2	= ($usecust2 && isset($value['cust2'])) ? $value['cust2'] : '';
-			$desc .= $cust2 ? $cust2_label.': '.$cust2 : '';  // ... Append custom properties to description
+			$cust1  = $usecust1 && isset($value['cust1']) ? $value['cust1'] : '';
+			$desc  .= $cust1 ? $cust1_label.': '.$cust1 : '';  // ... Append custom properties to description
+			$cust2  = $usecust2 && isset($value['cust2']) ? $value['cust2'] : '';
+			$desc  .= $cust2 ? $cust2_label.': '.$cust2 : '';  // ... Append custom properties to description
 
 			// HTML encode output
-			$title= htmlspecialchars($title, ENT_COMPAT, 'UTF-8');
-			$alt	= htmlspecialchars($alt, ENT_COMPAT, 'UTF-8');
-			$desc	= htmlspecialchars($desc, ENT_COMPAT, 'UTF-8');
+			$title_encoded = $title = htmlspecialchars($title, ENT_COMPAT, 'UTF-8');
+			$alt_encoded   = $alt   = htmlspecialchars($alt, ENT_COMPAT, 'UTF-8');
+			$desc_encoded  = $desc  = htmlspecialchars($desc, ENT_COMPAT, 'UTF-8');
 
-			$srcb = $thumb_urlpath . '/b_' .$extra_prefix. $image_name;  // backend
-			$srcs = $thumb_urlpath . '/s_' .$extra_prefix. $image_name;  // small
-			$srcm = $thumb_urlpath . '/m_' .$extra_prefix. $image_name;  // medium
-			$srcl = $thumb_urlpath . '/l_' .$extra_prefix. $image_name;  // large
-			$srco = (is_array($orig_urlpath) ? $orig_urlpath[$i] : $orig_urlpath)  . '/'   .$image_name;  // original image
+			if (!$isURL)
+			{
+				$srcb = $thumb_urlpath . '/b_' .$extra_prefix. $image_name;  // backend
+				$srcs = $thumb_urlpath . '/s_' .$extra_prefix. $image_name;  // small
+				$srcm = $thumb_urlpath . '/m_' .$extra_prefix. $image_name;  // medium
+				$srcl = $thumb_urlpath . '/l_' .$extra_prefix. $image_name;  // large
+				$srco = (is_array($orig_urlpath) ? $orig_urlpath[$i] : $orig_urlpath)  . '/'   .$image_name;  // original image
+			}
+			else
+			{
+				$srcb = $image_subpath;
+				$srcs = $image_subpath;
+				$srcm = $image_subpath;
+				$srcl = $image_subpath;
+				$srco = $image_subpath;
+			}
 
 			// Create a popup url link
 			$urllink = isset($value['urllink']) ? $value['urllink'] : '';
@@ -2074,18 +2095,21 @@ class plgFlexicontent_fieldsImage extends FCField
 
 			// Create a popup tooltip (legend)
 			$class = 'fc_field_image';
-			if ($uselegend && (!empty($title) || !empty($desc)))
+
+			if ($uselegend && (!empty($title_encoded) || !empty($desc_encoded)))
 			{
-				$class .= ' '.$tooltip_class;
-				$legend = ' title="'.flexicontent_html::getToolTip($title, $desc, 0, 1).'"';
+				$class .= ' ' . $tooltip_class;
+				$legend = ' title="'.flexicontent_html::getToolTip($title_encoded, $desc_encoded, 0, 0).'"';
 			}
 			else
 			{
 				$legend = '';
 			}
 
-			// Handle single image display, with/without total, TODO: verify all JS handle & ignore display none on the img TAG
-			$style = ($i!=0 && $isSingle) ? 'display:none;' : '';
+			// Handle single image display, with/without total, TODO: verify all JS handle & ignore display none on the img TAG container
+			$style = $i > 0 && $isSingle
+				? 'display:none;'
+				: '';
 
 			// Create a unique id for the link tags, and a class name for image tags
 			$uniqueid = $item->id . '_' . $field->id . '_' . $i;
@@ -2118,38 +2142,46 @@ class plgFlexicontent_fieldsImage extends FCField
 			}
 
 
+			$abs_srcb = $isURL ? $srcb : JUri::root(true).'/'.$srcb;
+			$abs_srcs = $isURL ? $srcs : JUri::root(true).'/'.$srcs;
+			$abs_srcm = $isURL ? $srcm : JUri::root(true).'/'.$srcm;
+			$abs_srcl = $isURL ? $srcl : JUri::root(true).'/'.$srcl;
+			$abs_srco = $isURL ? $srco : JUri::root(true).'/'.$srco;
+			$abs_src  = $isURL ? $src  : JUri::root(true).'/'.$src;
+
+
 			// ADD some extra (display) properties that point to all sizes, currently SINGLE IMAGE only (for consistency use 'use_ingroup' of 'ingroup')
 			if ($use_ingroup)
 			{
 				// In case of field displayed via in fieldgroup, this is an array
-				$field->{"display_backend_src"}[$n] = JUri::root(true).'/'.$srcb;
-				$field->{"display_small_src"}[$n] = JUri::root(true).'/'.$srcs;
-				$field->{"display_medium_src"}[$n] = JUri::root(true).'/'.$srcm;
-				$field->{"display_large_src"}[$n] = JUri::root(true).'/'.$srcl;
-				$field->{"display_original_src"}[$n] = JUri::root(true).'/'.$srco;
+				$field->{"display_backend_src"}[$n] = $abs_srcb;
+				$field->{"display_small_src"}[$n] = $abs_srcs;
+				$field->{"display_medium_src"}[$n] = $abs_srcm;
+				$field->{"display_large_src"}[$n] = $abs_srcl;
+				$field->{"display_original_src"}[$n] = $abs_srco;
 			}
 
 			// Field displayed not via fieldgroup return only the 1st value
-			else if ($i==0)
+			elseif ($i === 0)
 			{
-				$field->{"display_backend_src"} = JUri::root(true).'/'.$srcb;
-				$field->{"display_small_src"} = JUri::root(true).'/'.$srcs;
-				$field->{"display_medium_src"} = JUri::root(true).'/'.$srcm;
-				$field->{"display_large_src"} = JUri::root(true).'/'.$srcl;
-				$field->{"display_original_src"} = JUri::root(true).'/'.$srco;
+				$field->{"display_backend_src"} = $abs_srcb;
+				$field->{"display_small_src"} = $abs_srcs;
+				$field->{"display_medium_src"} = $abs_srcm;
+				$field->{"display_large_src"} = $abs_srcl;
+				$field->{"display_original_src"} = $abs_srco;
 			}
 
-			$field->thumbs_src['backend'][$use_ingroup ? $n : $i] = JUri::root(true).'/'.$srcb;
-			$field->thumbs_src['small'][$use_ingroup ? $n : $i] = JUri::root(true).'/'.$srcs;
-			$field->thumbs_src['medium'][$use_ingroup ? $n : $i] = JUri::root(true).'/'.$srcm;
-			$field->thumbs_src['large'][$use_ingroup ? $n : $i] = JUri::root(true).'/'.$srcl;
-			$field->thumbs_src['original'][$use_ingroup ? $n : $i] = JUri::root(true).'/'.$srco;
+			$field->thumbs_src['backend'][$use_ingroup ? $n : $i] = $abs_srcb;
+			$field->thumbs_src['small'][$use_ingroup ? $n : $i] = $abs_srcs;
+			$field->thumbs_src['medium'][$use_ingroup ? $n : $i] = $abs_srcm;
+			$field->thumbs_src['large'][$use_ingroup ? $n : $i] = $abs_srcl;
+			$field->thumbs_src['original'][$use_ingroup ? $n : $i] = $abs_srco;
 
-			$field->thumbs_path['backend'][$use_ingroup ? $n : $i] = JPATH_SITE.DS.$srcb;
-			$field->thumbs_path['small'][$use_ingroup ? $n : $i] = JPATH_SITE.DS.$srcs;
-			$field->thumbs_path['medium'][$use_ingroup ? $n : $i] = JPATH_SITE.DS.$srcm;
-			$field->thumbs_path['large'][$use_ingroup ? $n : $i] = JPATH_SITE.DS.$srcl;
-			$field->thumbs_path['original'][$use_ingroup ? $n : $i] = JPATH_SITE.DS.$srco;
+			$field->thumbs_path['backend'][$use_ingroup ? $n : $i] = $isURL ? $srcb : JPATH_SITE.DS.$srcb;
+			$field->thumbs_path['small'][$use_ingroup ? $n : $i] = $isURL ? $srcs : JPATH_SITE.DS.$srcs;
+			$field->thumbs_path['medium'][$use_ingroup ? $n : $i] = $isURL ? $srcm : JPATH_SITE.DS.$srcm;
+			$field->thumbs_path['large'][$use_ingroup ? $n : $i] = $isURL ? $srcl : JPATH_SITE.DS.$srcl;
+			$field->thumbs_path['original'][$use_ingroup ? $n : $i] = $isURL ? $srco : JPATH_SITE.DS.$srco;
 
 			/*
 			 * Suggest 1 or more (all?) images to social website listing, e.g. Facebook, twitter etc, (making sure that URL is ABSOLUTE URL)
@@ -2159,15 +2191,15 @@ class plgFlexicontent_fieldsImage extends FCField
 			 */
 			if ($useogp && ($ogplimit === 0 || $i < $ogplimit))
 			{
-			if ($isHtmlViewFE && $isMatchedItemView)
+				if ($isHtmlViewFE && $isMatchedItemView)
 				{
 					switch ($ogpthumbsize)
 					{
-						case 1: $ogp_src = JUri::root().$srcs; break;   // this maybe problematic, since it maybe too small or not accepted by social website
-						case 2: $ogp_src = JUri::root().$srcm; break;
-						case 3: $ogp_src = JUri::root().$srcl; break;
-						case 4: $ogp_src =  JUri::root().$srco; break;
-						default: $ogp_src = JUri::root().$srcm; break;
+						case 1: $ogp_src = $isURL ? $srcs : JUri::root().$srcs; break;   // this maybe problematic, since it maybe too small or not accepted by social website
+						case 2: $ogp_src = $isURL ? $srcm : JUri::root().$srcm; break;
+						case 3: $ogp_src = $isURL ? $srcl : JUri::root().$srcl; break;
+						case 4: $ogp_src =  $isURL ? $srco : JUri::root().$srco; break;
+						default: $ogp_src = $isURL ? $srcm : JUri::root().$srcm; break;
 					}
 					$document->addCustomTag('<link rel="image_src" href="'.$ogp_src.'" />');
 					$document->addCustomTag('<meta property="og:image" content="'.$ogp_src.'" />');
@@ -2175,52 +2207,72 @@ class plgFlexicontent_fieldsImage extends FCField
 			}
 
 
-			// ***
-			// *** CHECK if we were asked for value only display (e.g. image source)
-			// *** if so we will not be creating the HTML code for Image / Gallery
-			// ***
+			/**
+			 * CHECK if we were asked for value only display (e.g. image source)
+			 * if so we will not be creating the HTML code for Image / Gallery
+			 */
 
-			if ( isset(self::$value_only_displays[$prop]) )
+			if (isset(self::$value_only_displays[$prop]))
 			{
 				continue;
 			}
 
 
-			// ***
-			// *** Create image tags (according to configuration parameters)
-			// *** that will be used for the requested 'display' variable
-			// ***
+			/**
+			 * Create image tags (according to configuration parameters)
+			 * that will be used for the requested 'display' variable
+			 */
+
+			$size = isset(self::$display_to_thumb_size[$prop])
+				? self::$display_to_thumb_size[$prop]
+				: (isset(self::$index_to_thumb_size[$thumb_size]) ? self::$index_to_thumb_size[$thumb_size] : 's');
+
+			$crop = $field->parameters->get('method_'.$size);
+
+			if ($size !== 'o')
+			{
+				$w = $field->parameters->get('w_' . $size, self::$default_widths[$size]);
+				$h = $field->parameters->get('h_' . $size, self::$default_heights[$size]);
+
+				$img_size_attrs = $crop
+					? ' style="width: ' . $w . 'px; height: ' . $h . 'px;" '
+					: ' style="max-width: ' . $w . 'px; max-height: ' . $h . 'px;" ';
+			}
+			else
+			{
+				$img_size_attrs = '';
+			}
 
 			switch ($prop)
 			{
 				case 'display_backend':
-					$img_legend   = '<img src="'.JUri::root(true).'/'.$srcb.'" alt="'.$alt.'"'.$legend.' class="'.$class.'" itemprop="image"/>';
-					$img_nolegend = '<img src="'.JUri::root(true).'/'.$srcb.'" alt="'.$alt.'" class="'.$class.'" itemprop="image"/>';
+					$img_legend   = '<img src="'.$abs_srcb.'" alt="'.$alt_encoded.'"'.$legend.' class="'.$class.'" itemprop="image" ' . $img_size_attrs . ' />';
+					$img_nolegend = '<img src="'.$abs_srcb.'" alt="'.$alt_encoded.'" class="'.$class.'" itemprop="image" ' . $img_size_attrs . ' />';
 					break;
 
 				case 'display_small':
-					$img_legend   = '<img src="'.JUri::root(true).'/'.$srcs.'" alt="'.$alt.'"'.$legend.' class="'.$class.'" itemprop="image"/>';
-					$img_nolegend = '<img src="'.JUri::root(true).'/'.$srcs.'" alt="'.$alt.'" class="'.$class.'" itemprop="image"/>';
+					$img_legend   = '<img src="'.$abs_srcs.'" alt="'.$alt_encoded.'"'.$legend.' class="'.$class.'" itemprop="image" ' . $img_size_attrs . ' />';
+					$img_nolegend = '<img src="'.$abs_srcs.'" alt="'.$alt_encoded.'" class="'.$class.'" itemprop="image" ' . $img_size_attrs . ' />';
 					break;
 
 				case 'display_medium':
-					$img_legend   = '<img src="'.JUri::root(true).'/'.$srcm.'" alt="'.$alt.'"'.$legend.' class="'.$class.'" itemprop="image"/>';
-					$img_nolegend = '<img src="'.JUri::root(true).'/'.$srcm.'" alt="'.$alt.'" class="'.$class.'" itemprop="image"/>';
+					$img_legend   = '<img src="'.$abs_srcm.'" alt="'.$alt_encoded.'"'.$legend.' class="'.$class.'" itemprop="image" ' . $img_size_attrs . ' />';
+					$img_nolegend = '<img src="'.$abs_srcm.'" alt="'.$alt_encoded.'" class="'.$class.'" itemprop="image" ' . $img_size_attrs . ' />';
 					break;
 
 				case 'display_large':
-					$img_legend   = '<img src="'.JUri::root(true).'/'.$srcl.'" alt="'.$alt.'"'.$legend.' class="'.$class.'" itemprop="image"/>';
-					$img_nolegend = '<img src="'.JUri::root(true).'/'.$srcl.'" alt="'.$alt.'" class="'.$class.'" itemprop="image"/>';
+					$img_legend   = '<img src="'.$abs_srcl.'" alt="'.$alt_encoded.'"'.$legend.' class="'.$class.'" itemprop="image" ' . $img_size_attrs . ' />';
+					$img_nolegend = '<img src="'.$abs_srcl.'" alt="'.$alt_encoded.'" class="'.$class.'" itemprop="image" ' . $img_size_attrs . ' />';
 					break;
 
 				case 'display_original':
-					$img_legend   = '<img src="'.JUri::root(true).'/'.$srco.'" alt="'.$alt.'"'.$legend.' class="'.$class.'" itemprop="image"/>';
-					$img_nolegend = '<img src="'.JUri::root(true).'/'.$srco.'" alt="'.$alt.'" class="'.$class.'" itemprop="image"/>';
+					$img_legend   = '<img src="'.$abs_srco.'" alt="'.$alt_encoded.'"'.$legend.' class="'.$class.'" itemprop="image" ' . $img_size_attrs . ' />';
+					$img_nolegend = '<img src="'.$abs_srco.'" alt="'.$alt_encoded.'" class="'.$class.'" itemprop="image" ' . $img_size_attrs . ' />';
 					break;
 
 				case 'display': default:
-					$img_legend   = '<img src="'.JUri::root(true).'/'.$src.'" alt="'.$alt.'"'.$legend.' class="'.$class.'" itemprop="image"/>';
-					$img_nolegend = '<img src="'.JUri::root(true).'/'.$src.'" alt="'.$alt.'" class="'.$class.'" itemprop="image"/>';
+					$img_legend   = '<img src="'.$abs_src.'" alt="'.$alt_encoded.'"'.$legend.' class="'.$class.'" itemprop="image" ' . $img_size_attrs . ' />';
+					$img_nolegend = '<img src="'.$abs_src.'" alt="'.$alt_encoded.'" class="'.$class.'" itemprop="image" ' . $img_size_attrs . ' />';
 					break;
 			}
 
@@ -2252,7 +2304,7 @@ class plgFlexicontent_fieldsImage extends FCField
 			// ***
 
 			// CASE 0: Add single image display information (e.g. image count)
-			if ( $linkto_item )
+			if ($linkto_item)
 			{
 				$item_link = JRoute::_(FlexicontentHelperRoute::getItemRoute($item->slug, $item->categoryslug, 0, $item));
 				$field->{$prop}[] =
