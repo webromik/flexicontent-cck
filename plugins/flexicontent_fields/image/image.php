@@ -128,18 +128,21 @@ class plgFlexicontent_fieldsImage extends FCField
 		// Optional properies configuration
 		$linkto_url = (int) $field->parameters->get('linkto_url', 0);
 
+		$usemediaurl = 0;
 		$usealt      = (int) $field->parameters->get('use_alt', 0);
 		$usetitle    = (int) $field->parameters->get('use_title', 0);
 		$usedesc     = (int) $field->parameters->get('use_desc', 1);
 		$usecust1    = (int) $field->parameters->get('use_cust1', 0);
 		$usecust2    = (int) $field->parameters->get('use_cust2', 0);
 
+		$mediaurl_usage = (int) $field->parameters->get('mediaurl_usage', 0);
 		$alt_usage      = (int) $field->parameters->get('alt_usage', 0);
 		$title_usage    = (int) $field->parameters->get('title_usage', 0);
 		$desc_usage     = (int) $field->parameters->get('desc_usage', 0);
 		$cust1_usage    = (int) $field->parameters->get('cust1_usage', 0);
 		$cust2_usage    = (int) $field->parameters->get('cust2_usage', 0);
 
+		$default_mediaurl = ($item->version == 0 || $mediaurl_usage > 0) ? $field->parameters->get( 'default_mediaurl', '' ) : '';
 		$default_alt      = ($item->version == 0 || $alt_usage > 0) ? $field->parameters->get( 'default_alt', '' ) : '';
 		$default_title    = ($item->version == 0 || $title_usage > 0) ? JText::_($field->parameters->get( 'default_title', '' )) : '';
 		$default_desc     = ($item->version == 0 || $desc_usage > 0) ? $field->parameters->get( 'default_desc', '' ) : '';
@@ -150,7 +153,7 @@ class plgFlexicontent_fieldsImage extends FCField
 		// *** Calculate some configuration flags
 
 		// Display properties box
-		$none_props = !$linkto_url && !$usealt && !$usetitle && !$usedesc && !$usecust1 && !$usecust2;
+		$none_props = !$linkto_url && !$usemediaurl && !$usealt && !$usetitle && !$usedesc && !$usecust1 && !$usecust2;
 
 		// Inline uploaders flags
 		$use_inline_uploaders = $image_source >= 0;
@@ -315,9 +318,23 @@ class plgFlexicontent_fieldsImage extends FCField
 			return;*/
 		}
 
+		// Add needed JS/CSS
+		static $js_added = null;
+		if ( $js_added === null )
+		{
+			$js_added = true;
+			JText::script("FLEXI_FIELD_IMAGE_CLEAR_MEDIA_URL_FIRST", true);
+			JText::script("FLEXI_FIELD_IMAGE_ENTER_MEDIA_URL", true);
+			JText::script("FLEXI_FIELD_MEDIA_URL", true);
+			JText::script("FLEXI_ERROR", true);
+			$document->addScriptVersion(JUri::root(true) . '/plugins/flexicontent_fields/image/js/form.js', FLEXI_VHASH);
+		}
+
 		$js = '
 		var fc_field_dialog_handle_'.$field->id.';
 
+		fcfield_image.debugToConsole["'.$field_name_js.'"] = 0;
+		fcfield_image.use_native_apis["'.$field_name_js.'"] = 0;
 		';
 		$css = '';
 
@@ -432,6 +449,29 @@ class plgFlexicontent_fieldsImage extends FCField
 				newField.find('input.imgurllink').attr('id', element_id + '_urllink');
 				";
 
+			if ($usemediaurl)
+			{
+				$js .= "
+				var elements = ['img_mediaurl', 'img_fetch_btn', 'img_clear_btn'];
+				for	(var i = 0; i < elements.length; i++)
+				{
+					theInput = newField.find('.' + elements[i]).first();
+					var el_name = elements[i].replace(/^img_/, '');
+					theInput.attr('name','".$fieldname."['+uniqueRowNum".$field->id."+']['+el_name+']');
+					theInput.attr('id', element_id + '_' + el_name);
+				}
+
+				newField.find('input.img_mediaurl').val(".json_encode($default_mediaurl).");
+
+				newField.find('.fcfield-medialurlvalue').attr('onclick', 'fcfield_image.toggleMediaURL(\'' + element_id + '\', \'".$field_name_js."\');');
+				newField.find('.img_fetch_btn').attr('onclick', 'fcfield_image.fetchData(\'' + element_id + '\', \'".$field_name_js."\');');
+				newField.find('.img_clear_btn').attr('onclick', 'fcfield_image.clearData(\'' + element_id + '\', \'".$field_name_js."\');');
+				newField.find('.fcfield_message_box').attr('id','fcfield_message_box_' + element_id);
+
+				// Clear any existing message
+				jQuery('#fcfield_message_box_' + element_id).html('');
+				";
+			}
 
 			if ($usealt) $js .= "
 				newField.find('input.imgalt').val(".json_encode($default_alt).");
@@ -533,7 +573,7 @@ class plgFlexicontent_fieldsImage extends FCField
 				var originalname = row.find( originalfftag ).val();
 				var existingname = row.find( existingfftag ).val();
 				var hasvalue = row.find( 'input.hasvalue').val();
-				var valcounter = document.getElementById('".$elementid."');
+				var valcounter = document.getElementById('custom_".$field_name_js."');
 
 				// IF a non-empty container is being removed ... get counter (which is optionally used as 'required' form element and empty it if is 1, or decrement if 2 or more)
 				//if ( originalname != '' || existingname != '' )
@@ -586,164 +626,24 @@ class plgFlexicontent_fieldsImage extends FCField
 		// Added field's custom CSS / JS
 		$image_folder = JUri::root(true).'/'.$dir_url;
 		$js .= "
-			var fc_db_img_path='".$image_folder."';
+			/**
+			 * Method Wrappers to class methods (used for compatibility)
+			 */
 
-			//function qmAssignFile".$field->id."(tagid, file, preview_url, keep_modal, file_original) {}
-			function fcfield_assignImage".$field->id."(tagid, file, preview_url, keep_modal, file_original)
+			function fcfield_assignImage".$field->id."(tagid, file, preview_url, keep_modal, preview_caption)
 			{
-				// Get TAG ID of the main form element of this field
-				var ff_suffix = '_existingname';
-				var elementid = tagid.replace(ff_suffix, '');
-
-				// Get current has-value Flag and also set new value to the flag
-				var valcounter = document.getElementById('".$elementid."');
-				var hasvalue_obj = jQuery('#' + elementid );
-				var hasValue = hasvalue_obj.val();
-				hasvalue_obj.val(file ? '1' : '');
-
-				// Increment/Make non-empty the form field used as value counter, so that is-required validation works
-				if (file && !hasValue)
-				{
-					valcounter.value = valcounter.value==''  ?  1  :  parseInt(valcounter.value) + 1;
-				}
-
-				// Decrement/Make empty the form field used as value counter, so that is-required validation works
-				else if (!file && hasValue)
-				{
-					valcounter.value = ( valcounter.value=='' || valcounter.value=='1' )  ?  ''  :  parseInt(valcounter.value) - 1;
-				}
-				//if (window.console) window.console.log('valcounter: ' + valcounter.value);
-
-				// Set existing value & Clear original value for both DB-mode & Folder-mode(s)
-				jQuery('#' + elementid + '_existingname').val(file);
-				jQuery('#' + elementid + '_originalname').val('');
-
-				// Replace old preview image
-				var preview_img_OLD = jQuery('#' + elementid + '_preview_image' );
-				if (preview_img_OLD)
-				{
-					var box = preview_img_OLD.closest('.fcfieldval_container');
-					var preview_img_NEW = preview_url != ''
-						? '<img class=\"preview_image\" id=\"'+elementid+'_preview_image\" src=\"'+preview_url+'\" alt=\"Preview image\" />'
-						: '<img class=\"preview_image\" id=\"'+elementid+'_preview_image\" src=\"data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=\" alt=\"Preview image\" />';
-
-					preview_img_NEW = jQuery(preview_img_NEW);
-					preview_img_NEW.insertAfter( preview_img_OLD );
-					preview_img_OLD.remove();
-
-					if (keep_modal!=2)
-					{
-						preview_img_NEW.closest('.fcimg_preview_box').show();
-						clearFieldUploader".$field->id."(box);
-					}
-
-					// Set new preview text too (a 'title')
-					if (file) jQuery('#' + elementid + '_fcimg_preview_msg' ).html( !!file_original ? file_original : file );
-
-					jQuery('#' + elementid + '_remove').removeAttr('checked').trigger('change');
-				}
-
-				// Close file select modal dialog
-				if (!keep_modal && fc_field_dialog_handle_".$field->id.")
-				{
-					fc_field_dialog_handle_".$field->id.".dialog('close');
-				}
-
-				// Re-validate
-				jQuery(valcounter).trigger('blur');
-				//if (window.console) window.console.log('valcounter: ' + valcounter.value);
+				fcfield_image.assignImage(tagid, file, preview_url, keep_modal, preview_caption, '".$field_name_js."');
 			}
 
-
-			function clearFieldUploader".$field->id."(box)
-			{
-				var upload_container = box.find('.fc_file_uploader');
-				var upload_instance = upload_container.data('plupload_instance');
-
-				var upBTN = box.find('.fc_files_uploader_toggle_btn');
-				if (upload_instance)
-				{
-					jQuery(upload_instance).data('fc_plupload_instance').clearUploader(upBTN.data('rowno'));
-				}
-				upBTN.removeClass('active');
-				upload_container.hide();
-			}
-
-
-			function clearField".$field->id."(el, options)
-			{
-				var box = jQuery(el).closest('.fcfieldval_container');
-				var hasValue = box.find('.hasvalue').val();
-				var valcounter = document.getElementById('".$elementid."');
-				//if (window.console) window.console.log('valcounter: ' + valcounter.value);
-				options = options || {};
-				options.hide_image = options.hide_image || false;
-				options.keep_props = options.keep_props || false;
-
-				if (options.hide_image)
-				{
-					box.find('.fcimg_preview_box').hide();
-				}
-				else
-				{
-					clearFieldUploader".$field->id."(box);
-
-					box.find('.originalname').val('');
-					box.find('.existingname').val('');
-					box.find('.hasvalue').val('');
-					box.find('.preview_image').attr('src', 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=');
-					box.find('.fcimg_preview_msg').html(' ');
-					box.find('.fcimg_preview_box').show();
-
-					if (hasValue) valcounter.value = ( valcounter.value=='' || valcounter.value=='1' )  ?  ''  :  parseInt(valcounter.value) - 1;
-					//if (window.console) window.console.log('valcounter: ' + valcounter.value);
-				}
-				if (options.keep_props)
-				{
-					box.find('input, textarea').val('');
-				}
-			}
-
-
-			var currElement".$field->id.";
-			function incrementValCnt".$field->id."(el)
-			{
-				var box = jQuery('#'+currElement".$field->id.").closest('.fcfieldval_container');
-				var hasValue = box.find('.hasvalue').val();
-				box.find('.hasvalue').val('1');
-				var valcounter = document.getElementById('".$elementid."');
-				if (hasValue=='')
-				{
-					valcounter.value = valcounter.value==''  ?  '1'  :  parseInt(valcounter.value) + 1;
-				}
-				//if (window.console) window.console.log('valcounter: ' + valcounter.value);
-			}
-
+			/* Method used as callbacks of AJAX uploader */
 
 			function fcfield_FileFiltered_".$field->id."(uploader, file)
 			{
+				fcfield_image.fileFiltered(uploader, file, '".$field_name_js."');
 			}
 			function fcfield_FileUploaded_".$field->id."(uploader, file, result)
 			{
-				// Get 'fc_plupload' class instance from uploader
-				var _this = jQuery(uploader).data('fc_plupload_instance');
-				try {
-					var response = eval(result.response);
-				} catch(err) {
-					var response = eval('(' + result.response + ')');
-				}
-
-				if (!!response.error)
-				{
-					alert(response.error.message);
-					return;
-				}
-
-				//window.console.log(response.data);
-			 	var file = response.data;
-			 	file.targetid    = jQuery(uploader.settings.container).closest('.fcfieldval_container').find('.existingname').attr('id');
-			 	file.preview_url = jQuery(uploader.settings.container).find('.plupload_img_preview > img').attr('src');
-			 	fcfield_assignImage".$field->id."(file.targetid, file.filename, file.preview_url, 2, file.filename_original);
+				fcfield_image.fileUploaded(uploader, file, result, '".$field_name_js."');
 			}
 		";
 		$css .='';
@@ -862,7 +762,7 @@ class plgFlexicontent_fieldsImage extends FCField
 			$select_existing = '';
 			$pick_existing = '';
 			$addExistingURL = sprintf($filesElementURL, $elementid_n);
-			$addExistingURL_onclick = "fc_field_dialog_handle_".$field->id." = fc_showDialog(jQuery(this).attr('data-href'), 'fc_modal_popup_container', 0, 0, 0, 0, {title: '".JText::_('FLEXI_SELECT_IMAGE', true)."'});";
+			$addExistingURL_onclick = "fcfield_image.dialog_handle['".$field_name_js."'] = fc_field_dialog_handle_".$field->id." = fc_showDialog(jQuery(this).attr('data-href'), 'fc_modal_popup_container', 0, 0, 0, 0, {title: '".JText::_('FLEXI_SELECT_IMAGE', true)."', paddingW: 10, paddingH: 16});";
 
 			if ($image_source >= 0)
 			{
@@ -906,10 +806,10 @@ class plgFlexicontent_fieldsImage extends FCField
 					<input type="text" name="'.$fieldname_n.'[existingname]" id="'.$mm_id.'" value="'.htmlspecialchars($img_path, ENT_COMPAT, 'UTF-8').'" readonly="readonly"
 						class="existingname input-xxlarge field-media-input hasTipImgpath"  title="'.htmlspecialchars('<span id="TipImgpath"></span>', ENT_COMPAT, 'UTF-8').'" data-basepath="'.JUri::root().'"
 					/>
-					<a class="fc_image_field_mm_modal btn '.$tooltip_class.'" title="'.JText::_('FLEXI_SELECT_IMAGE').'" onclick="var mm_id=jQuery(this).parent().find(\'.existingname\').attr(\'id\'); currElement'.$field->id.'=mm_id; SqueezeBox.open(\''.$mm_link.'\', {size:{x: ((window.innerWidth-120) > 1360 ? 1360 : (window.innerWidth-120)), y: ((window.innerHeight-220) > 800 ? 800 : (window.innerHeight-220))}, handler: \'iframe\', onClose: function() { incrementValCnt'.$field->id.'(); } });  return false;">
+					<a class="fc_image_field_mm_modal btn '.$tooltip_class.'" title="'.JText::_('FLEXI_SELECT_IMAGE').'" onclick="var mm_id=jQuery(this).parent().find(\'.existingname\').attr(\'id\'); fcfield_image.currElement[\''.$field_name_js.'\']=mm_id; SqueezeBox.open(\''.$mm_link.'\', {size:{x: ((window.innerWidth-120) > 1360 ? 1360 : (window.innerWidth-120)), y: ((window.innerHeight-220) > 800 ? 800 : (window.innerHeight-220))}, handler: \'iframe\', onClose: function() { fcfield_image.incrementValCnt(\''.$field_name_js.'\'); } });  return false;">
 						'.JText::_('FLEXI_SELECT').'
 					</a>
-					<a class="btn '.$tooltip_class.'" href="javascript:;" title="'.JText::_('FLEXI_CLEAR').'" onclick="var mm_id=jQuery(this).parent().find(\'.existingname\').attr(\'id\');  clearField'.$field->id.'(this); jInsertFieldValue(\'\', mm_id); return false;" >
+					<a class="btn '.$tooltip_class.'" href="javascript:;" title="'.JText::_('FLEXI_CLEAR').'" onclick="var mm_id=jQuery(this).parent().find(\'.existingname\').attr(\'id\'); fcfield_image.clearField(this, {}, \''.$field_name_js.'\'); jInsertFieldValue(\'\', mm_id); return false;" >
 						<i class="icon-remove"></i>
 					</a>
 				</div>
@@ -994,6 +894,32 @@ class plgFlexicontent_fieldsImage extends FCField
 					<!--td class="key"><label class="fc-prop-lbl">'.JText::_( 'FLEXI_FIELD_LINKTO_URL' ).'</label></td-->
 					<td><input class="imgurllink" size="40" name="'.$fieldname_n.'[urllink]" value="'.htmlspecialchars(isset($value['urllink']) ? $value['urllink'] : '', ENT_COMPAT, 'UTF-8').'" type="text" placeholder="'.htmlspecialchars(JText::_( 'FLEXI_FIELD_LINKTO_URL' ), ENT_COMPAT, 'UTF-8').'"/></td>
 				</tr>';
+			if ($usemediaurl)
+			{
+				$placeholder = htmlspecialchars(($usemediaurl === 1
+					? 'Youtube / Vimeo URL'
+					: JText::_('FLEXI_FIELD_MEDIA_URL')
+				), ENT_COMPAT, 'UTF-8');
+				$mediaurl =
+				'<tr>
+					<td>
+						<div class="fcfield-image-mediaurl-box" ' . (empty($value['mediaurl']) ? ' style="display: none;" ' : '') . '>
+							<input class="img_mediaurl" size="40" name="'.$fieldname_n.'[mediaurl]" id="'.$elementid_n.'_mediaurl" value="'.htmlspecialchars(isset($value['mediaurl']) ? $value['mediaurl'] : $default_mediaurl, ENT_COMPAT, 'UTF-8').'" type="text" placeholder="'. $placeholder .'"/>
+							<br>
+							<div class="' . $input_grp_class . ' fcfield-image-mediaurl-btns">
+								<a href="javascript:;" class="'. $tooltip_class .' btn btn-primary btn-small img_fetch_btn" title="'.JText::_('FLEXI_FETCH').'" onclick="fcfield_image.fetchData(\''.$elementid_n.'\', \''.$field_name_js.'\'); return false;">
+									<i class="icon-loop"></i> ' . JText::_('FLEXI_FETCH') . '
+								</a>
+								<a href="javascript:;" class="'. $tooltip_class .' btn btn-warning btn-small img_clear_btn" id="'.$elementid_n.'_clear_btn" title="'.JText::_('FLEXI_CLEAR').'" onclick="fcfield_image.clearData(\''.$elementid_n.'\', \''.$field_name_js.'\'); return false;" >
+									<i class="icon-cancel"></i> ' . JText::_('FLEXI_CLEAR') . '
+								</a>
+							</div>
+							<div class="fcfield_message_box" id="fcfield_message_box_'.$elementid_n.'"></div>
+						</div>
+					</td>
+				</tr>
+				';
+			}
 			if ($usealt) $alt =
 				'<tr>
 					<!--td class="key"><label class="fc-prop-lbl">'.JText::_( 'FLEXI_FIELD_ALT' ).'</label></td-->
@@ -1037,8 +963,8 @@ class plgFlexicontent_fieldsImage extends FCField
 					'refresh_on_complete' => false,
 					'thumb_size_default' => $thumb_size_default,
 					'toggle_btn' => array(
-						'class' => $add_on_class.' fcfield-uploadvalue' . $font_icon_class,
-						'text' => '',
+						'class' => ($file_btns_position ? $add_on_class : '') . ' fcfield-uploadvalue' . $font_icon_class,
+						'text' => (!$file_btns_position ? '&nbsp; ' . JText::_('FLEXI_UPLOAD') : ''),
 						'onclick' => 'var box = jQuery(this).closest(\'.fcfieldval_container\').find(\'.fcimg_preview_box\'); box.parent().find(\'.fc_file_uploader\').is(\':visible\') ? box.show() : box.hide(); box.is(\':visible\') ? jQuery(this).removeClass(\'active\') : jQuery(this).addClass(\'active\'); ',
 						'action' => null
 					),
@@ -1050,19 +976,29 @@ class plgFlexicontent_fieldsImage extends FCField
 				);
 
 				$multi_icon = $form_font_icons ? ' <span class="icon-stack"></span>' : '<span class="pages_stack"></span>';
-				$btn_classes = 'fc-files-modal-link ' . $add_on_class . ' ' . $font_icon_class;
+				$btn_classes = 'fc-files-modal-link ' . ($file_btns_position ? $add_on_class : '') . ' ' . $font_icon_class;
 				$uploader_html->multiUploadBtn = '';  /*'
 					<span data-href="'.$addExistingURL.'" onclick="'.$addExistingURL_onclick.'" class="'.$btn_classes.' fc-up fcfield-uploadvalue multi">
-						&nbsp; ' . $multi_icon . ' ' . ($file_btns_position==2 ? JText::_('FLEXI_UPLOAD') : '') . '
+						&nbsp; ' . $multi_icon . ' ' . (!$file_btns_position || $file_btns_position==2 ? JText::_('FLEXI_UPLOAD') : '') . '
 					</span>';*/
 				$uploader_html->myFilesBtn = '
 					<span data-href="'.$addExistingURL.'" onclick="'.$addExistingURL_onclick.'" class="'.$btn_classes.' fc-sel fcfield-selectvalue multi">
-						&nbsp; ' . $multi_icon . ' ' . ($file_btns_position==2 ? JText::_('FLEXI_MY_FILES') : '') . '
+						' .  ($file_btns_position ? $multi_icon : '') . ' ' . (!$file_btns_position || $file_btns_position==2 ? '&nbsp; ' . JText::_('FLEXI_MY_FILES') : '') . ' ' . (!$file_btns_position ? $multi_icon : '') .'
+					</span>';
+				$uploader_html->mediaUrlBtn = !$usemediaurl ? '' : '
+					<span class="' . ($file_btns_position ? $add_on_class : '') . ' fcfield-medialurlvalue ' . $font_icon_class . '" onclick="fcfield_image.toggleMediaURL(\''.$elementid_n.'\', \''.$field_name_js.'\'); return false;">
+						' . (!$file_btns_position || $file_btns_position==2 ? '&nbsp; ' . JText::_('FLEXI_FIELD_MEDIA_URL') : '') . '
 					</span>';
 				$uploader_html->clearBtn = '
-					<span class="' . $add_on_class . ' fcfield-clearvalue ' . $font_icon_class . '" title="'.JText::_('FLEXI_CLEAR').'" onclick="clearField'.$field->id.'(this);">
+					<span class="' . $add_on_class . ' fcfield-clearvalue ' . $font_icon_class . '" title="'.JText::_('FLEXI_CLEAR').'" onclick="fcfield_image.clearField(this, {}, \''.$field_name_js.'\');">
 					</span>';
 			}
+
+			$drop_btn_class =
+				(FLEXI_J40GE
+					? 'btn btn-sm toolbar dropdown-toggle dropdown-toggle-split'
+					: 'btn btn-small toolbar dropdown-toggle'
+				);
 
 			$field->html[] = '
 				'.($multiple && !$none_props ? '<div class="fcclear"></div>' : '').'
@@ -1071,52 +1007,59 @@ class plgFlexicontent_fieldsImage extends FCField
 					'.$move2.'
 					'.$remove_button.'
 					'.(!$add_position ? '' : $add_here)
-					.'
+					.($use_inline_uploaders && !$file_btns_position ?'
+					<div class="buttons btn-group fc-iblock">
+						<span role="button" class="' . $drop_btn_class . ' fcfield-addvalue ' . $font_icon_class . '" data-toggle="dropdown">
+							<span class="caret"></span>
+						</span>
+						<ul class="dropdown-menu" role="menu">
+							<li>'.$uploader_html->toggleBtn.'</li>
+							<li>'.$uploader_html->multiUploadBtn.'</li>
+							<li>'.$uploader_html->myFilesBtn.'</li>
+							<li>'.$uploader_html->mediaUrlBtn.'</li>
+						</ul>
+					</div>
+					'.$uploader_html->clearBtn.'
+					' : '') . '
 				</div>
 				').'
-			'.($use_inline_uploaders && !$file_btns_position ?'
-			<div class="'.$input_grp_class.' fc-xpended-btns" style="margin-left: 8px !important;">
-				'.$uploader_html->toggleBtn.'
-				'.$uploader_html->multiUploadBtn.'
-				'.$uploader_html->myFilesBtn.'
-				'.$uploader_html->clearBtn.'
-			</div>
-			' : '')
-			.($use_inline_uploaders && $file_btns_position ? '
-			<div class="fcclear"></div>
-			<div class="btn-group" style="margin: 4px 0 16px 0; display: inline-block;">
-				<div class="'.$input_grp_class.' fc-xpended-btns">
-					'.$uploader_html->toggleBtn.'
-					'.$uploader_html->multiUploadBtn.'
-					'.$uploader_html->myFilesBtn.'
-					'.$uploader_html->clearBtn.'
-				</div>
-			</div>
-			' : '') . '
-			'.$originalname.'
-			<div class="fcclear"></div>
-			'.$existingname.'
-			<div class="fcclear"></div>
-
-			'.($image_source === -2 || $image_source === -1  ?  // Do not add image preview box if using Joomla Media Manager (or intro/full mode)
-				$select_existing.'
+				'.($use_inline_uploaders && ($file_btns_position || !$add_ctrl_btns) ? '
 				<div class="fcclear"></div>
-			' : '
-				<div class="fcimg_preview_box fc-box thumb_'.$thumb_size_default.'">
-					'.$imgpreview.'
-					'.$fcimg_preview_msg.'
-					<div class="fcclear"></div>
-				'.$select_existing.'
+				<div class="btn-group" style="margin: 4px 0 16px 0; display: inline-block;">
+					<div class="'.$input_grp_class.' fc-xpended-btns">
+						'.$uploader_html->toggleBtn.'
+						'.$uploader_html->multiUploadBtn.'
+						'.$uploader_html->myFilesBtn.'
+						'.$uploader_html->mediaUrlBtn.'
+						'.$uploader_html->clearBtn.'
+					</div>
 				</div>
-				'.(!empty($uploader_html) ? $uploader_html->container : '').'
-			').'
+				' : '') . '
+				'.$originalname.'
+				<div class="fcclear"></div>
+				'.$existingname.'
+				<div class="fcclear"></div>
+
+				'.($image_source === -2 || $image_source === -1  ?  // Do not add image preview box if using Joomla Media Manager (or intro/full mode)
+					$select_existing.'
+					<div class="fcclear"></div>
+				' : '
+					<div class="fcimg_preview_box fc-box thumb_'.$thumb_size_default.'">
+						'.$imgpreview.'
+						'.$fcimg_preview_msg.'
+						<div class="fcclear"></div>
+					'.$select_existing.'
+					</div>
+					'.(!empty($uploader_html) ? $uploader_html->container : '').'
+				').'
 				'
 
-				.(($linkto_url || $usealt || $usetitle || $usedesc || $usecust1 || $usecust2) ?
+				.(($linkto_url || $usemediaurl || $usealt || $usetitle || $usedesc || $usecust1 || $usecust2) ?
 				'
 				<div class="fcimg_value_props">
 					<table class="fc-form-tbl fcinner fccompact">
 						' . @ $urllink . '
+						' . @ $mediaurl . '
 						' . @ $alt . '
 						' . @ $title . '
 						' . @ $desc . '
@@ -1169,7 +1112,7 @@ class plgFlexicontent_fieldsImage extends FCField
 		}
 
 		// This is field HTML that is created regardless of values
-		$non_value_html = '<input id="'.$elementid.'" class="fc_hidden_value '.($use_ingroup ? '' : $required_class).'" type="text" name="__fcfld_valcnt__['.$field->name.']" value="'.($count_vals ? $count_vals : '').'" />';
+		$non_value_html = '<input id="custom_'.$field_name_js.'" class="fc_hidden_value '.($use_ingroup ? '' : $required_class).'" type="text" name="__fcfld_valcnt__['.$field->name.']" value="'.($count_vals ? $count_vals : '').'" />';
 		if ($use_ingroup)
 		{
 			$field->html[-1] = $non_value_html;
