@@ -1070,7 +1070,8 @@ class plgFlexicontent_fieldsImage extends FCField
 				<div class="'.$input_grp_class.' fc-xpended-btns">
 					'.$move2.'
 					'.$remove_button.'
-					'.(!$add_position ? '' : $add_here).'
+					'.(!$add_position ? '' : $add_here)
+					.'
 				</div>
 				').'
 			'.($use_inline_uploaders && !$file_btns_position ?'
@@ -1099,7 +1100,6 @@ class plgFlexicontent_fieldsImage extends FCField
 
 			'.($image_source === -2 || $image_source === -1  ?  // Do not add image preview box if using Joomla Media Manager (or intro/full mode)
 				$select_existing.'
-
 				<div class="fcclear"></div>
 			' : '
 				<div class="fcimg_preview_box fc-box thumb_'.$thumb_size_default.'">
@@ -2068,9 +2068,9 @@ class plgFlexicontent_fieldsImage extends FCField
 			$desc  .= $cust2 ? $cust2_label.': '.$cust2 : '';  // ... Append custom properties to description
 
 			// HTML encode output
-			$title_encoded = $title = htmlspecialchars($title, ENT_COMPAT, 'UTF-8');
-			$alt_encoded   = $alt   = htmlspecialchars($alt, ENT_COMPAT, 'UTF-8');
-			$desc_encoded  = $desc  = htmlspecialchars($desc, ENT_COMPAT, 'UTF-8');
+			$title_encoded = htmlspecialchars($title, ENT_COMPAT, 'UTF-8');
+			$alt_encoded   = htmlspecialchars($alt, ENT_COMPAT, 'UTF-8');
+			$desc_encoded  = htmlspecialchars($desc, ENT_COMPAT, 'UTF-8');
 
 			if (!$isURL)
 			{
@@ -2347,7 +2347,7 @@ class plgFlexicontent_fieldsImage extends FCField
 				{
 					$field->{$prop}[] = $pretext.'
 					<span class="fc_image_thumb" style="'.$style.'; cursor: pointer;" '.
-						'onclick="jQuery.fancybox.open([{ type: \'iframe\', href: \''.$urllink.'\', topRatio: 0.9, leftRatio: 0.9, title: \''.($desc ? $title.': '.$desc : $title).'\' }], { padding : 0});"
+						'onclick="jQuery.fancybox.open([{ type: \'iframe\', href: \''.$urllink.'\', topRatio: 0.9, leftRatio: 0.9, title: \''.($desc_encoded ? $title_encoded.': '.$desc_encoded : $title_encoded).'\' }], { padding : 0});"
 					>
 						'.$img_legend.'
 					</span>
@@ -2398,9 +2398,9 @@ class plgFlexicontent_fieldsImage extends FCField
 				// Elastislide inline carousel gallery (Responsive image gallery with togglable thumbnail-strip, plus previewer and description)
 				case 7:
 					// *** NEEDS: thumbnail list must be created with large size thubmnails, these will be then thumbnailed by the JS gallery code
-					$title_attr = $desc ? $desc : $title;
+					$title_attr = $desc_encoded ? $desc_encoded : $title_encoded;
 					$img_legend_custom ='
-						 <img src="'.JUri::root(true).'/'.$src.'" alt ="'.$alt.'"'.$legend.' class="'.$class.'"
+						 <img src="'.JUri::root(true).'/'.$src.'" alt ="'.$alt_encoded.'"'.$legend.' class="'.$class.'"
 						 	data-large="' . JUri::root(true).'/'.$srcl . '" data-description="'.$title_attr.'" itemprop="image"/>
 					';
 					$group_str = $group_name ? 'rel="['.$group_name.']"' : '';
@@ -2434,7 +2434,7 @@ class plgFlexicontent_fieldsImage extends FCField
 
 				// Rokbox image popup
 				case 2:
-					$title_attr = $desc ? $desc : $title;
+					$title_attr = $desc_encoded ? $desc_encoded : $title_encoded;
 					$group_str = '';   // no support for image grouping
 					$field->{$prop}[] = $pretext.
 						'<a style="'.$style.'" href="'.$srcl.'" rel="rokbox['.$wl.' '.$hl.']" '.$group_str.' title="'.$title_attr.'" class="fc_image_thumb" data-rokbox data-rokbox-caption="'.$title_attr.'">
@@ -2445,7 +2445,7 @@ class plgFlexicontent_fieldsImage extends FCField
 
 				// JCE popup image popup
 				case 3:
-					$title_attr = $desc ? $title.'::'.$desc : $title;
+					$title_attr = $desc_encoded ? $title_encoded . '::' . $desc_encoded : $title_encoded;
 					$group_str = $group_name ? 'group['.$group_name.'];' : '';
 					$field->{$prop}[] = $pretext.
 						'<a style="'.$style.'" href="'.$srcl.'"  class="fc_image_thumb jcepopup" data-mediabox="'.$group_str.'title['.$title_attr.']">
@@ -2467,7 +2467,7 @@ class plgFlexicontent_fieldsImage extends FCField
 
 				// (Widgetkit) SPOTlight image popup
 				case 6:
-					$title_attr = $desc ? $desc : $title;
+					$title_attr = $desc_encoded ? $desc_encoded : $title_encoded;
 					$group_str = $group_name ? 'data-spotlight-group="'.$group_name.'"' : '';
 					$field->{$prop}[] = $pretext.
 						'<a style="'.$style.'" href="'.$srcl.'" class="fc_image_thumb" data-lightbox="on" data-spotlight="effect:bottom" '.$group_str.' title="'.$title_attr.'">
