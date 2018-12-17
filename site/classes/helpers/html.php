@@ -2754,7 +2754,7 @@ class flexicontent_html
 	 * @param array $params
 	 * @since 1.0
 	 */
-	static function statebutton( $item, $params=null, $addToggler=true, $tooltip_placement = null, $class=null, $ops = array('controller'=>'items', 'state_propname'=>'state') )
+	static function statebutton($record, $params = null, $addToggler = true, $tooltip_placement = null, $class=null, $ops = array('controller'=>'items', 'state_propname'=>'state'))
 	{
 		// Some static variables
 		static $user;
@@ -2787,13 +2787,13 @@ class flexicontent_html
 		switch ($ops['controller'])
 		{
 			case 'items':
-				$asset = 'com_content.article.' . $item->id;
-				$created_by = $item->created_by;
+				$asset = 'com_content.article.' . $record->id;
+				$created_by = $record->created_by;
 				$refresh_on_success = 'false';
 				break;
 			case 'categories':
-				$asset = 'com_content.category.' . $item->id;
-				$created_by = $item->created_user_id;
+				$asset = 'com_content.category.' . $record->id;
+				$created_by = $record->created_user_id;
 				$refresh_on_success = 'true';
 				break;
 			case 'tags':
@@ -2807,27 +2807,27 @@ class flexicontent_html
 				break;
 		}
 
-		$item->canCheckin   = isset($item->canCheckin)   ? $item->canCheckin   : $has_checkin || $item->checked_out == 0 || $item->checked_out == $user->id;
+		$record->canCheckin   = isset($record->canCheckin)   ? $record->canCheckin   : $has_checkin || $record->checked_out == 0 || $record->checked_out == $user->id;
 		if (isset($canManage))
 		{
-			$item->canEditState = isset($item->canEditState) ? $item->canEditState : $canManage;
-			$item->canDelete    = isset($item->canDelete)    ? $item->canDelete    : $canManage;
+			$record->canEditState = isset($record->canEditState) ? $record->canEditState : $canManage;
+			$record->canDelete    = isset($record->canDelete)    ? $record->canDelete    : $canManage;
 		}
 		else
 		{
-			$item->canEditState = isset($item->canEditState) ? $item->canEditState : (!$isAdmin || $item->canCheckin) && ($user->authorise('core.edit.state', $asset) || ($created_by == $user->get('id') && $user->authorise('core.edit.state.own', $asset)));
-			$item->canDelete    = isset($item->canDelete)    ? $item->canDelete    : (!$isAdmin || $item->canCheckin) && ($user->authorise('core.delete', $asset)     || ($created_by == $user->get('id') && $user->authorise('core.delete.own', $asset)));
+			$record->canEditState = isset($record->canEditState) ? $record->canEditState : (!$isAdmin || $record->canCheckin) && ($user->authorise('core.edit.state', $asset) || ($created_by == $user->get('id') && $user->authorise('core.edit.state.own', $asset)));
+			$record->canDelete    = isset($record->canDelete)    ? $record->canDelete    : (!$isAdmin || $record->canCheckin) && ($user->authorise('core.delete', $asset)     || ($created_by == $user->get('id') && $user->authorise('core.delete.own', $asset)));
 		}
 
-		$item->canDelete = $item->canDelete && empty($trash_unsupported);
+		$record->canDelete = $record->canDelete && empty($trash_unsupported);
 		$has_archive = $has_archive && empty($archive_unsupported);
 
 		// Display state toggler if it can do any of state change
-		$canChangeState = $item->canEditState || $item->canDelete || $has_archive;
+		$canChangeState = $record->canEditState || $record->canDelete || $has_archive;
 
 		static $js_and_css_added = false;
 
-		if (!$js_and_css_added && $canChangeState && $addToggler )
+		if (!$js_and_css_added && $canChangeState && $addToggler)
 		{
 			// File exists both in frontend & backend (and is different), so we will use 'base' method and not 'root'
 			JText::script('FLEXI_ACTION', true);
@@ -2924,7 +2924,7 @@ class flexicontent_html
 
 			if ($class)
 			{
-				$button_classes .= ' '.$class;
+				$button_classes .= ' ' . $class;
 			}
 			elseif (!$params || !$params->get('btn_grp_dropdown', 0))
 			{
@@ -2949,8 +2949,13 @@ class flexicontent_html
 		}
 
 		// Create state icon
-		$state = $item->{$ops['state_propname']};
-		if ( !isset($state_names[$state]) ) $state = 'u';
+		$state = $record->{$ops['state_propname']};
+
+		if (!isset($state_names[$state]))
+		{
+			$state = 'u';
+		}
+
 		$state_text ='';
 		$stateicon = flexicontent_html::stateicon($state, $icon_params, 'html', $state_text);
 
@@ -2961,20 +2966,20 @@ class flexicontent_html
 		// Create publish information
 		$publish_info = array();
 
-		if (isset($item->publish_up))
+		if (isset($record->publish_up))
 		{
-			$publish_up = JFactory::getDate($item->publish_up);
+			$publish_up = JFactory::getDate($record->publish_up);
 			$publish_up->setTimezone($tz);
-			$publish_info[] = $item->publish_up == $nullDate
+			$publish_info[] = $record->publish_up == $nullDate
 				? $jtext['start_always']
 				: $jtext['start'] .": ". JHtml::_('date', $publish_up->toSql(), 'Y-m-d H:i:s');
 		}
 
-		if (isset($item->publish_down))
+		if (isset($record->publish_down))
 		{
-			$publish_down = JFactory::getDate($item->publish_down);
+			$publish_down = JFactory::getDate($record->publish_down);
 			$publish_down->setTimezone($tz);
-			$publish_info[] = $item->publish_down == $nullDate
+			$publish_info[] = $record->publish_down == $nullDate
 				? $jtext['finish_no_expiry']
 				: $jtext['finish'] .": ". JHtml::_('date', $publish_down->toSql(), 'Y-m-d H:i:s');
 		}
@@ -2984,7 +2989,7 @@ class flexicontent_html
 		if ( $canChangeState && $addToggler )
 		{
 			// Only add user's permitted states on the current item
-			if ($item->canEditState)
+			if ($record->canEditState)
 			{
 				$state_ids = $ops['controller'] === 'items'
 					? array(1, -5, 0, -3, -4)
@@ -2996,13 +3001,15 @@ class flexicontent_html
 				$state_ids[] = 2;
 			}
 
-			if ($item->canDelete) 
+			if ($record->canDelete) 
 			{
 				$state_ids[] = -2;
 			}
 
-			if ($tooltip_placement === 'top') $tooltip_placement = '';
-			else if ( $tooltip_placement ) ;
+			if ($tooltip_placement)
+			{
+				$tooltip_placement = $tooltip_placement !== 'top' ? $tooltip_placement : '';
+			}
 			elseif (!$params || !$params->get('show_icons', 2))
 			{
 				$tooltip_placement = 'bottom';
@@ -3012,24 +3019,23 @@ class flexicontent_html
 				$tooltip_placement = !$params->get('btn_grp_dropdown', 0) ? 'bottom' : 'left';
 			}
 
-			//$allowed_states = array();
-			//$allowed_states[] = '<div>'.$jtext['action'].'</div>');
 			foreach ($state_ids as $i => $state_id)
 			{
 				$state_data[] = array('i'=>$state_id);
-				/*$allowed_states[] ='
-					<span onclick="fc_statehandler_singleton.setstate(\''.$state_id.'\', \''.$item->id.'\')">
-						'.($use_font_icons ? '<span class="icon-'.$font_icons[$state_id].'"></span>' : '<img src="'.$img_path.$state_imgs[$state_id].'" alt="s" /> ').$state_tips[$state_id].'
-					</span>';*/
 			}
-			$tooltip_title = flexicontent_html::getToolTip($state_text ? $state_text : JText::_( 'FLEXI_PUBLISH_INFORMATION' ), ' &nbsp; '.implode("\n<br/> &nbsp; \n", $publish_info).'<br/>'.$jtext['change_state'], 0);
+			$tooltip_title = flexicontent_html::getToolTip(
+				$state_text ?: JText::_('FLEXI_PUBLISH_INFORMATION'),
+				' &nbsp; ' . implode("\n<br/> &nbsp; \n", $publish_info) . '<br/>' . $jtext['change_state'],
+				0, 1
+			);
+
 			$output = '
-			<div class="statetoggler '.$button_classes.' '.$tooltip_class.'" '.($tooltip_placement ? ' data-placement="'.$tooltip_placement.'"' : '').' title="'.$tooltip_title.'" onclick="fc_statehandler_singleton.toggleSelector(this)">
+			<div class="statetoggler ' . $button_classes . ' ' . $tooltip_class . '" ' . ($tooltip_placement ? ' data-placement="' . $tooltip_placement . '"' : '') . ' title="' . $tooltip_title . '" onclick="fc_statehandler_singleton.toggleSelector(this)">
 				<div class="statetoggler_inner">
-					<div id="row'.$item->id.'" class="stateopener ntxt">
+					<div id="row' . $record->id . '" class="stateopener ntxt">
 						' . $stateicon . '
 					</div>
-					<div class="options" data-id="'.$item->id.'" data-st="'.htmlspecialchars(json_encode($state_data), ENT_COMPAT, 'UTF-8').'">'/*.implode('', $allowed_states)*/.'</div>
+					<div class="options" data-id="' . $record->id . '" data-st="'.htmlspecialchars(json_encode($state_data), ENT_COMPAT, 'UTF-8').'">'/*.implode('', $allowed_states)*/.'</div>
 				</div>
 			</div>';
 		}
@@ -3044,7 +3050,7 @@ class flexicontent_html
 
 			$tooltip_title = flexicontent_html::getToolTip(JText::_( 'FLEXI_PUBLISH_INFORMATION' ), implode("\n<br/>\n", $publish_info), 0);
 			$output = '
-				<div id="row'.$item->id.'" class="statetoggler_disabled '.$class.'">
+				<div id="row'.$record->id.'" class="statetoggler_disabled '.$class.'">
 					<span class="'.$tooltip_class.'" title="'.$tooltip_title.'">
 						' . $stateicon . '
 					</span>
