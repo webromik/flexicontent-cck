@@ -239,7 +239,7 @@ if ( $use_search || $use_filters ) : /* BOF search and filters block */
 				}
 				else
 				{
-					$is_empty = !is_array($filt_vals) && !strlen(trim($filt_vals));
+					$is_empty = !strlen(trim($filt_vals));
 				}
 
 				$filter_label_class = !$is_empty
