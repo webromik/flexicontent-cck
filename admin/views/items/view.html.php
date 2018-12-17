@@ -50,8 +50,13 @@ class FlexicontentViewItems extends JViewLegacy
 			$this->_displayCopyMove($tpl, $cid, $behaviour);
 			return;
 		}
-		
-		
+
+
+		$this->tooltip_class = ' hasTooltip';
+		$this->btn_sm_class  = ' btn btn-small ';
+		$this->btn_iv_class = '';
+
+
 		// ********************
 		// Initialise variables
 		// ********************
@@ -369,10 +374,44 @@ class FlexicontentViewItems extends JViewLegacy
 		
 		if ( $cparams->get('show_csvbutton_be', 0) )
 		{
-			$full_js     = "window.location.replace('" . JUri::base(true) . '/index.php?option=com_flexicontent&view=items&format=csv'. "')";
-			flexicontent_html::addToolBarButton(
-				'CSV', 'csvexport', $full_js, $msg_alert='', $msg_confirm='',
-				$btn_task='', $extra_js="", $btn_list=false, $btn_menu=true, $btn_confirm=false, $btn_class="btn-info", $btn_icon="icon-download");
+			$btn_title = JText::_('FLEXI_CSV_EXPORT_CURRENT_PAGE', true);
+			$btn_info  = flexicontent_html::encodeHTML(JText::_('FLEXI_CSV_EXPORT_CURRENT_PAGE_INFO'), 2);
+			$task_url  = JUri::base(true) . '/index.php?option=com_flexicontent&view=items&format=csv';
+
+			$full_js   = "window.location.replace('" . $task_url . "')";
+			$btn_arr[] = flexicontent_html::addToolBarButton(
+				$btn_title, 'csvexport', $full_js, $msg_alert='', $msg_confirm='',
+				$btn_task='', $extra_js="", $btn_list=false, $btn_menu=true, $btn_confirm=false,
+				$this->btn_sm_class . ' btn-fcaction ' . (FLEXI_J40GE ? $this->btn_iv_class : '') . ' ' . $this->tooltip_class, $btn_icon='icon-download',
+				'data-placement="right" data-title="' . $btn_info . '"', $auto_add = 1, $tag_type='button'
+			);
+
+
+			/**
+			 * Add all-items CSV Export button
+			 */
+
+			$has_pro = JPluginHelper::isEnabled($extfolder = 'system', $extname = 'flexisyspro');
+
+			if (1)
+			{
+				$btn_title = JText::_('FLEXI_CSV_EXPORT_ALL_ITEMS', true);
+				$btn_info  = flexicontent_html::encodeHTML(JText::_('FLEXI_CSV_EXPORT_ALL_ITEMS_INFO'), 2);
+				$task_url  = JUri::base(true) . '/index.php?option=com_flexicontent&view=items&format=csv&items_set=all';
+
+				$full_js = $has_pro
+					? "window.location.replace('" . $task_url . "')"
+					: "var box = jQuery('#fc_available_in_pro'); fc_file_props_handle = fc_showAsDialog(box, 480, 320, null, {title:'" . JText::_($btn_title) . "'}); return false;";
+
+				$btn_name='collaborate';
+				$btn_arr[$btn_name] = '<div id="fc_available_in_pro" style="display: none;">' . JText::_('FLEXI_AVAILABLE_IN_PRO_VERSION') . '</div>' . flexicontent_html::addToolBarButton(
+						$btn_title, $btn_name, $full_js ,
+						$msg_alert='', $msg_confirm='',
+						$btn_task='', $extra_js='', $btn_list=false, $btn_menu=true, $btn_confirm=false,
+						$btn_class='btn-fcaction ' . (FLEXI_J40GE ? $this->btn_iv_class : '') . ' ' . $this->tooltip_class, $btn_icon="icon-download",
+						'data-placement="right" data-href="' . $task_url . '" data-title="' . $btn_info . '"', $auto_add = 1
+					);
+			}
 		}
 
 		if ($add_divider) { JToolbarHelper::divider(); JToolbarHelper::spacer(); }
