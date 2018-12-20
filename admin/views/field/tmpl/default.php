@@ -58,9 +58,9 @@ $this->document->addScriptDeclaration($js);
 <div class="flexicontent" id="flexicontent">
 <form action="index.php" method="post" name="adminForm" id="adminForm" class="form-validate form-horizontal">
 
-<div class="container-fluid" style="padding:0px!important;">
+<div class="container-fluid row" style="padding: 0px !important; margin: 0px !important">
 
-	<div class="span6 full_width_980">
+	<div class="span6 col-6 full_width_980">
 	
 		<!--span class="badge"><h3><?php echo JText::_( /*'FLEXI_STANDARD_FIELDS_PROPERTIES'*/'Common configuration' ); ?></h3></span-->
 		
@@ -362,7 +362,7 @@ $this->document->addScriptDeclaration($js);
 		</div>
 
 	</div>
-	<div class="span6 full_width_980 padded_wrap_box">
+	<div class="span6 col-6 full_width_980 padded_wrap_box">
 			
 		<span class="fcsep_level0" style="margin:0 0 12px 0; background-color:#777; "><?php echo JText::_( /*'FLEXI_THIS_FIELDTYPE_PROPERTIES'*/'FIELD TYPE specific configuration' ); ?></span>
 			
@@ -412,9 +412,7 @@ $this->document->addScriptDeclaration($js);
 					} ?>
 				</div>
 				<?php
-			}
-			else
-			{
+			} else {
 				echo "<br /><span style=\"padding-left:25px;\"'>" . JText::_( 'FLEXI_APPLY_TO_SEE_THE_PARAMETERS' ) . "</span><br /><br />";
 			}
 			?>

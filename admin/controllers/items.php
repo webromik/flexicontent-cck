@@ -5,7 +5,7 @@
  *
  * @author          Emmanuel Danan, Georgios Papadakis, Yannick Berges, others, see contributor page
  * @link            https://flexicontent.org
- * @copyright       Copyright © 2018, FLEXIcontent team, All Rights Reserved
+ * @copyright       Copyright Â© 2018, FLEXIcontent team, All Rights Reserved
  * @license         http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  */
 
@@ -113,7 +113,9 @@ class FlexicontentControllerItems extends FlexicontentController
 		$session = JFactory::getSession();
 		$perms   = FlexicontentHelperPerm::getPerm();
 
-		$ctrl_task = 'task=items.';
+		$ctrl_task = $app->isSite()
+			? 'task='
+			: 'task=' . $this->record_name_pl . '.';
 		$original_task = $this->task;
 
 		// Retrieve form data these are subject to basic filtering
@@ -171,8 +173,11 @@ class FlexicontentControllerItems extends FlexicontentController
 				// Set the POSTed form data into the session, so that they get reloaded
 				$app->setUserState('com_flexicontent.edit.' . $this->record_name . '.data', $data);      // Save the jform data in the session
 
-				// For errors, we redirect back to refer
-				$this->setRedirect($_SERVER['HTTP_REFERER']);
+				// Skip redirection back to return url if inside a component-area-only view, showing error using current page, since usually we are inside a iframe modal
+				if ($this->input->getCmd('tmpl') !== 'component')
+				{
+					$this->setRedirect($this->returnURL);
+				}
 
 				if ($this->input->get('fc_doajax_submit'))
 				{
@@ -335,8 +340,17 @@ class FlexicontentControllerItems extends FlexicontentController
 			$data['featured_cid'] = $featured_cid;
 		}
 
-		// Enforce maintaining secondary categories if user is not allowed to change / set secondary cats
-		if (!$enable_cid_selector)
+
+		/**
+		 * Enforce maintaining secondary categories if user is not allowed to change / set secondary cats
+		 * or (FE only) if these were not submitted
+		 * *** NOTE *** this DOES NOT ENFORCE SUBMIT MENU category configuration, this is done later by the model store()
+		 */
+
+		// (FE) No category override active, and no secondary cats were submitted
+		$cid_not_submitted = $app->isAdmin() ? true : !$overridecatperms && empty($data['cid']);
+
+		if (!$enable_cid_selector && $cid_not_submitted)
 		{
 			// For new item use default secondary categories from type configuration
 			if ($isnew)
@@ -368,8 +382,17 @@ class FlexicontentControllerItems extends FlexicontentController
 			}
 		}
 
-		// Enforce maintaining main category if user is not allowed to change / set main category
-		if (!$enable_catid_selector)
+
+		/**
+		 * Enforce maintaining main category if user is not allowed to change / set main category
+		 * or (FE only) if this was not submitted
+		 * *** NOTE *** this DOES NOT ENFORCE SUBMIT MENU category configuration, this is done later by the model store()
+		 */
+
+		// (FE) No category override active, and no main category was submitted
+		$catid_not_submitted = $app->isAdmin() ? true : !$overridecatperms && empty($data['catid']);
+
+		if (!$enable_catid_selector && $catid_not_submitted)
 		{
 			// For new item use default main category from type configuration
 			if ($isnew && $params->get('catid_default'))
@@ -616,8 +639,11 @@ class FlexicontentControllerItems extends FlexicontentController
 			$this->setError($model->getError() ?: JText::_('FLEXI_ERROR_STORING_ITEM'));
 			$this->setMessage($this->getError(), 'error');
 
-			// For errors, we redirect back to refer
-			$this->setRedirect($this->returnURL);
+			// Skip redirection back to return url if inside a component-area-only view, showing error using current page, since usually we are inside a iframe modal
+			if ($this->input->getCmd('tmpl') !== 'component')
+			{
+				$this->setRedirect($this->returnURL);
+			}
 
 			// Try to check-in the record, but ignore any new errors
 			try
@@ -931,32 +957,82 @@ class FlexicontentControllerItems extends FlexicontentController
 		/**
 		 * Saving is done, decide where to redirect
 		 */
+
+		$msg = JText::_('FLEXI_' . $this->_NAME . '_SAVED');
+
 		switch ($this->task)
 		{
 			// REDIRECT CASE FOR APPLY / SAVE AS COPY: Save and reload the edit form
 			case 'apply':
 			case 'apply_type':
-				$msg = JText::_('FLEXI_ITEM_SAVED');
-				$link = 'index.php?option=com_flexicontent&' . $ctrl_task . 'edit&view=item&id=' . (int) $model->get('id');
+				if ($app->isAdmin())
+				{
+					$link = 'index.php?option=com_flexicontent&' . $ctrl_task . 'edit&view=' . $this->record_name . '&id=' . (int) $model->get('id');
+				}
+				else
+				{
+					// Create the URL, maintain current menu item if this was given
+					$Itemid = $this->input->get('Itemid', 0, 'int');
+					$item_url = JRoute::_(FlexicontentHelperRoute::getItemRoute($item->slug, $item->categoryslug, $Itemid));
+
+					// Set task to 'edit', and pass original referer back to avoid making the form itself the referer, but also check that it is safe enough
+					$link = $item_url
+						. ( strstr($item_url, '?') ? '&' : '?' ) . 'task=edit'
+						. '&return='.base64_encode($this->returnURL);
+				}
 				break;
 
 			// REDIRECT CASE FOR SAVE and NEW: Save and load new record form
 			case 'save2new':
-				$msg = JText::_('FLEXI_ITEM_SAVED');
-				$link =
-					'index.php?option=com_flexicontent&view=item' .
-					'&typeid=' . $model->get('type_id') .
-					'&filter_cats=' . $model->get('catid');
+				if ($app->isAdmin())
+				{
+					$link = 'index.php?option=com_flexicontent&view=' . $this->record_name
+						. '&typeid=' . $model->get('type_id')
+						. '&filter_cats=' . $model->get('catid');
+				}
+				else
+				{
+					$link = JRoute::_(
+						'index.php?option=com_flexicontent&view=item&task=add&id=0' .
+						'&typeid=' . $model->get('type_id') .
+						'&cid=' . $model->get('catid')
+						, false
+					);
+				}
 				break;
 
 			// REDIRECT CASES FOR SAVING
 			default:
-				$msg = JText::_('FLEXI_ITEM_SAVED');
-				$link = 'index.php?option=com_flexicontent&view=items';
+				if ($app->isAdmin())
+				{
+					$link = $this->returnURL;
+				}
+
+				// REDIRECT CASE: Return to a custom page after creating a new item (e.g. a thanks page)
+				elseif ($newly_submitted_item && $submit_redirect_url_fe)
+				{
+					$link = $submit_redirect_url_fe;
+				}
+
+				// REDIRECT CASE: Save and preview the latest version
+				elseif ($this->task === 'save_a_preview')
+				{
+					$link = JRoute::_(FlexicontentHelperRoute::getItemRoute($model->get('id') . ':' . $model->get('alias'), $model->get('catid'), 0, $model->_item) . '&amp;preview=1', false);
+				}
+
+				// REDIRECT CASE: Return to the form 's original referer after item saving
+				else
+				{
+					$msg = $newly_submitted_item
+						? JText::_('FLEXI_THANKS_SUBMISSION')
+						: JText::_('FLEXI_ITEM_SAVED');
+					$link = $this->returnURL;
+				}
 				break;
 		}
 
-		$this->setRedirect($link, $msg);
+		$app->enqueueMessage($msg, 'message');
+		$this->setRedirect($link);
 
 		// return;  // comment above and decomment this one to profile the saving operation
 
@@ -1491,7 +1567,7 @@ class FlexicontentControllerItems extends FlexicontentController
 
 
 	/**
-	 * Method to toggle the featured setting of a list of articles.
+	 * Method to toggle the featured setting of a list of records
 	 *
 	 * @return  void
 	 *
@@ -1969,7 +2045,12 @@ class FlexicontentControllerItems extends FlexicontentController
 		if ($model->isCheckedOut($user->get('id')))
 		{
 			$app->setHeader('status', '400 Bad Request', true);
-			$this->setRedirect($this->returnURL, JText::_('FLEXI_EDITED_BY_ANOTHER_ADMIN'), 'warning');
+			$app->enqueueMessage(JText::_('FLEXI_EDITED_BY_ANOTHER_ADMIN'), 'warning');
+
+			if ($this->input->getCmd('tmpl') !== 'component')
+			{
+				$this->setRedirect($this->returnURL);
+			}
 
 			// Do not add messages meant only if form load succeeds
 			$model->enqueueMessages($_exclude = array('showAfterLoad' => 1));
@@ -1981,7 +2062,12 @@ class FlexicontentControllerItems extends FlexicontentController
 		if (!$model->checkout())
 		{
 			$app->setHeader('status', '400 Bad Request', true);
-			$this->setRedirect($this->returnURL, JText::_('FLEXI_OPERATION_FAILED') . ' : ' . $model->getError(), 'error');
+			$app->enqueueMessage(JText::_('FLEXI_OPERATION_FAILED') . ' : ' . $model->getError(), 'error');
+
+			if ($this->input->getCmd('tmpl') !== 'component')
+			{
+				$this->setRedirect($this->returnURL);
+			}
 
 			// Do not add messages meant only if form load succeeds
 			$model->enqueueMessages($_exclude = array('showAfterLoad' => 1));

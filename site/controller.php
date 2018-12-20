@@ -5,7 +5,7 @@
  *
  * @author          Emmanuel Danan, Georgios Papadakis, Yannick Berges, others, see contributor page
  * @link            https://flexicontent.org
- * @copyright       Copyright © 2018, FLEXIcontent team, All Rights Reserved
+ * @copyright       Copyright Â© 2018, FLEXIcontent team, All Rights Reserved
  * @license         http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  */
 
@@ -478,7 +478,7 @@ class FlexicontentController extends JControllerLegacy
 		 * Perform validation / manipulation of the already validated data,
 		 * run this even if validation failed, in case we want to handle this case too
 		 */
-		$extraChecks = $this->_afterModelValidation($validated_data, $data);
+		$extraChecks = $this->_afterModelValidation($validated_data, $data, $model);
 
 
 		/**
@@ -3702,7 +3702,7 @@ class FlexicontentController extends JControllerLegacy
 	 *
 	 * @since 3.3
 	 */
-	protected function _afterModelValidation(& $validated_data, & $data)
+	protected function _afterModelValidation(& $validated_data, & $data, $model)
 	{
 		$this->input->get('task', '', 'cmd') !== __FUNCTION__ or die(__FUNCTION__ . ' : direct call not allowed');
 

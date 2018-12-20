@@ -5,7 +5,7 @@
  *
  * @author          Emmanuel Danan, Georgios Papadakis, Yannick Berges, others, see contributor page
  * @link            https://flexicontent.org
- * @copyright       Copyright © 2018, FLEXIcontent team, All Rights Reserved
+ * @copyright       Copyright Â© 2018, FLEXIcontent team, All Rights Reserved
  * @license         http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  */
 
@@ -15,7 +15,7 @@ use Joomla\String\StringHelper;
 use Joomla\Utilities\ArrayHelper;
 use Joomla\CMS\Table\Table;
 
-require_once('base.php');
+require_once('base/base.php');
 
 /**
  * FLEXIcontent Component (Common) Item Model (FrontEnd / BackEnd)
@@ -43,6 +43,13 @@ class ParentClassItem extends FCModelAdmin
 	 * @var string
 	 */
 	var $records_jtable = 'flexicontent_items';
+
+	/**
+	 * Column names
+	 */
+	var $state_col   = 'state';
+	var $name_col    = 'title';
+	var $parent_col  = 'catid';
 
 	/**
 	 * Record primary key
@@ -1070,17 +1077,12 @@ class ParentClassItem extends FCModelAdmin
 		$this->_record->cid = $this->_record->categories;
 
 		// Get the form.
-		$form_name = $this->events_context ?: $this->option . '.' . $this->getName();
-		$xml_filename = $this->getName();
-		$form = $this->loadForm($form_name, $xml_filename, array('control' => 'jform', 'load_data' => $loadData));
+		$form = parent::getForm($data, $loadData);
 
 		if (empty($form))
 		{
 			return false;
 		}
-
-		$form->option = $this->option;
-		$form->context = $this->getName();
 
 		unset($this->_record->cid);
 
@@ -1328,12 +1330,6 @@ class ParentClassItem extends FCModelAdmin
 				if ( isset($data['language']) )  $this->_record->language  = $data['language'];
 				if ( isset($data['catid']) )     $this->_record->catid  = $data['catid'];
 			}
-		}
-
-		// (UNNEEDED ?) If there are params fieldsets in the form it will fail with a registry object
-		if (isset($data->params) && $data->params instanceof Registry)
-		{
-			$data->params = $data->params->toArray();
 		}
 
 		$events_context = $this->events_context ?: $this->option.'.'.$this->getName();
@@ -1742,7 +1738,6 @@ class ParentClassItem extends FCModelAdmin
 	{
 		global $fc_run_times;
 		$start_microtime = microtime(true);
-		$checkACL = true;   // 3.2.x always has checkACL true
 
 		// ***
 		// *** Initialize various variables
@@ -1907,6 +1902,7 @@ class ParentClassItem extends FCModelAdmin
 			'params_fset'  => 'attribs',
 			'layout_type'  => 'item',
 			'model_names'  => array($this->option => $this->getName(), 'com_content' => 'article'),
+			'cssprep_save' => false,
 		);
 		$this->mergeAttributes($item, $data, $mergeProperties, $mergeOptions);
 
@@ -5526,15 +5522,26 @@ class ParentClassItem extends FCModelAdmin
 	 */
 	protected function cleanCache($group = null, $client_id = 0)
 	{
-		$cache = FLEXIUtilities::getCache($group, $client_id);
 		if ($group)
 		{
-			$cache->clean();
+			parent::cleanCache($group, $client_id);
 		}
+
+		// An empty '$group' will clean '$this->option' which is the Component VIEW Cache, we will do a little more ...
 		else
 		{
-			$cache->clean('com_flexicontent_items');
-			$cache->clean('com_flexicontent_filters');
+			/**
+			 * Note: null should be the same as $this->option ...
+			 * Maybe add option not clean Component's VIEW cache it will be too aggressive ...
+			 */
+			if (1)
+			{
+				parent::cleanCache(null, $client_id);
+				parent::cleanCache('com_content', $client_id);
+			}
+
+			parent::cleanCache('com_flexicontent_items', $client_id);
+			parent::cleanCache('com_flexicontent_filters', $client_id);
 		}
 	}
 
@@ -5668,6 +5675,36 @@ class ParentClassItem extends FCModelAdmin
 			$allowed =
 				($hasTypeEditState && $user->authorise('core.edit.state', 'com_flexicontent')) ||
 				($hasTypeEditStateOwn && $user->authorise('core.edit.state.own', 'com_flexicontent'));
+		}
+
+		return $allowed;
+	}
+
+
+	/**
+	 * Method to check if the user can delete the record
+	 *
+	 * @return	boolean	True on success
+	 *
+	 * @since	3.2.0
+	 */
+	public function canDelete($record = null)
+	{
+		$record  = $record ?: $this->_record;
+		$user    = JFactory::getUser();
+		$isOwner = !empty($record->created_by) && ( $record->created_by == $user->get('id') );
+
+		// Existing item, use item specific permissions
+		if (!empty($record->id))
+		{
+			$asset = $this->type_alias . '.' . $record->id;
+			$allowed = $user->authorise('core.delete', $asset) || ($user->authorise('core.delete.own', $asset) && $isOwner);
+		}
+
+		// Delete should not be used only on existing records, always return false
+		else
+		{
+			$allowed = false;
 		}
 
 		return $allowed;
@@ -6500,4 +6537,67 @@ class ParentClassItem extends FCModelAdmin
 		}
 	}
 
+
+	/**
+	 * Method to handle partial form data
+	 *
+	 * @param   JForm   $form   A JForm object.
+	 * @param   mixed   $data   The data expected for the form.
+	 *
+	 * @return  void
+	 *
+	 * @since   3.3.0
+	 */
+	protected function handlePartialForm($form, & $data)
+	{
+		if (JFactory::getApplication()->isAdmin())
+		{
+			return;
+		}
+
+		$this->_loadItemParams();
+
+		if (empty($this->_record) || empty($this->_record->parameters))
+		{
+			return;
+		}
+
+		foreach($this->mergeableGroups as $grp_name)
+		{
+			if ($grp_name === 'metadata')
+			{
+				if ($this->_record->parameters->get('usemetadata_fe', 1) < 1)
+				{
+					unset($data['metakey']);
+					unset($data['metadesc']);
+				}
+
+				if ($this->_record->parameters->get('usemetadata_fe', 1) < 2)
+				{
+					foreach ($form->getGroup($grp_name) as $field)
+					{
+						unset($data[$grp_name][$field->fieldname]);
+					}
+				}
+
+				continue;
+			}
+
+			foreach ($form->getFieldsets($grp_name) as $fsname => $fieldSet)
+			{
+				$skip = ($fsname === 'params-basic' && $this->_record->parameters->get('usedisplaydetails_fe', 0) < 1)
+					|| ($fsname === 'params-advanced' && $this->_record->parameters->get('usedisplaydetails_fe', 0) < 2)
+					|| ($fsname === 'params-seoconf' && $this->_record->parameters->get('useseoconf_fe', 0) < 1)
+					;
+
+				if ($skip)
+				{
+					foreach ($form->getFieldset($fsname) as $field)
+					{
+						unset($data[$grp_name][$field->fieldname]);
+					}
+				}
+			}
+		}
+	}
 }

@@ -1,50 +1,42 @@
 <?php
 /**
- * @version 1.5 stable $Id: category.php 1372 2012-07-08 19:08:21Z ggppdk $
- * @package Joomla
- * @subpackage FLEXIcontent
- * @copyright (C) 2009 Emmanuel Danan - www.vistamedia.fr
- * @license GNU/GPL v2
- * 
- * FLEXIcontent is a derivative work of the excellent QuickFAQ component
- * @copyright (C) 2008 Christoph Lukes
- * see www.schlu.net for more information
+ * @package         FLEXIcontent
+ * @version         3.3
  *
- * FLEXIcontent is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * @author          Emmanuel Danan, Georgios Papadakis, Yannick Berges, others, see contributor page
+ * @link            https://flexicontent.org
+ * @copyright       Copyright © 2018, FLEXIcontent team, All Rights Reserved
+ * @license         http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  */
 
-// no direct access
 defined('_JEXEC') or die('Restricted access');
 
 jimport('legacy.model.admin');
 use Joomla\String\StringHelper;
-require_once('base.php');
+use Joomla\Utilities\ArrayHelper;
+use Joomla\Component\Categories\Administrator\Helper\CategoriesHelper;
+
+require_once('base/base.php');
 
 /**
  * FLEXIcontent Component Category Model
  *
- * @package Joomla
- * @subpackage FLEXIcontent
- * @since		1.0
  */
 class FlexicontentModelCategory extends FCModelAdmin
 {
 	/**
-	 * Record name
+	 * Record name, (parent class property), this is used for: naming session data, XML file of class, etc
 	 *
 	 * @var string
 	 */
-	var $record_name = 'category';
+	protected $name = 'category';
 
 	/**
-	 * Record database table 
+	 * Record database table
 	 *
 	 * @var string
 	 */
-	var $records_dbtbl = 'com_categories';
+	var $records_dbtbl = 'categories';
 
 	/**
 	 * Record jtable name
@@ -52,6 +44,13 @@ class FlexicontentModelCategory extends FCModelAdmin
 	 * @var string
 	 */
 	var $records_jtable = 'flexicontent_categories';
+
+	/**
+	 * Column names
+	 */
+	var $state_col   = 'published';
+	var $name_col    = 'title';
+	var $parent_col  = 'parent_id';
 
 	/**
 	 * Record primary key
@@ -66,6 +65,20 @@ class FlexicontentModelCategory extends FCModelAdmin
 	 * @var object
 	 */
 	var $_record = null;
+
+	/**
+	 * Events context to use during model FORM events and diplay PREPARE events triggering
+	 *
+	 * @var object
+	 */
+	var $events_context = 'com_content.category';
+
+	/**
+	 * Record's type alias string
+	 *
+	 * @var        string
+	 */
+	var $type_alias = 'com_content.category';
 
 	/**
 	 * Flag to indicate adding new records with next available ordering (at the end),
@@ -90,37 +103,50 @@ class FlexicontentModelCategory extends FCModelAdmin
 	var $extension_proxy = 'com_content';
 
 	/**
-	 * Records real extension
+	 * Context to use for registering (language) associations
 	 *
 	 * @var string
 	 */
 	var $associations_context = 'com_categories.item';
 
+
+	/**
+	 * Groups of Fields that can be partially present in the form
+	 */
+	var $mergeableGroups = array('params');
+
 	/**
 	 * Various record specific properties
 	 *
 	 */
-	var $_inherited_params = null;  // @var object, Inherited parameters
+
+	// Inherited parameters
+	var $_inherited_params = null;
+
+	/**
+	 * List filters that are always applied
+	 */
+	var $hard_filters = array('a.extension' => FLEXI_CAT_EXTENSION);
 
 	/**
 	 * Constructor
 	 *
-	 * @since 1.0
+	 * @since 3.3.0
 	 */
-	function __construct()
+	public function __construct($config = array())
 	{
-		parent::__construct();
+		parent::__construct($config);
 	}
 
 
 	/**
 	 * Legacy method to get the record
 	 *
-	 * @access	public
 	 * @return	object
+	 *
 	 * @since	1.0
 	 */
-	function &getCategory($pk = null)
+	public function getCategory($pk = null)
 	{
 		return parent::getRecord($pk);
 	}
@@ -129,9 +155,12 @@ class FlexicontentModelCategory extends FCModelAdmin
 	/**
 	 * Method to initialise the record data
 	 *
-	 * @access	protected
+	 * @param   object      $record    The record being initialized
+	 * @param   boolean     $initOnly  If true then only a new record will be initialized without running the _afterLoad() method
+	 *
 	 * @return	boolean	True on success
-	 * @since	1.0
+	 *
+	 * @since	1.5
 	 */
 	protected function _initRecord(&$record = null, $initOnly = false)
 	{
@@ -142,7 +171,7 @@ class FlexicontentModelCategory extends FCModelAdmin
 		$record->id							= 0;
 		$record->parent_id			= 0;
 		$record->title					= null;
-		$record->name						= null;  //$this->record_name . ($this->_getLastId() + 1);
+		$record->name						= null;  //$this->getName() . ($this->_getLastId() + 1);
 		$record->alias					= null;
 		$record->description		= null;
 		$record->extension			= FLEXI_CAT_EXTENSION;
@@ -163,27 +192,6 @@ class FlexicontentModelCategory extends FCModelAdmin
 
 
 	/**
-	 * Custom clean the cache
-	 *
-	 * @since	1.6
-	 */
-	protected function cleanCache($group = NULL, $client_id = -1)
-	{
-		// -1 means both, but we will do both always
-		parent::cleanCache('com_flexicontent');
-		parent::cleanCache('com_content');
-		parent::cleanCache('mod_articles_archive');
-		parent::cleanCache('mod_articles_categories');
-		parent::cleanCache('mod_articles_category');
-		parent::cleanCache('mod_articles_latest');
-		parent::cleanCache('mod_articles_news');
-		parent::cleanCache('mod_articles_popular');
-
-		JFactory::getSession()->set('clear_cats_cache', 1, 'flexicontent');  //parent::cleanCache('com_flexicontent_cats');
-	}
-
-
-	/**
 	 * Method to get a table object, load it if necessary.
 	 *
 	 * @param   string  $type    The table name. Optional.
@@ -194,10 +202,18 @@ class FlexicontentModelCategory extends FCModelAdmin
 	 *
 	 * @since   3.2.0
 	 */
-	public function getTable($type = 'Category', $prefix = 'CategoriesTable', $config = array())
+	public function getTable($type = 'Category', $prefix = null, $config = array())
 	{
-		JTable::addIncludePath(JPATH_ADMINISTRATOR.DS.'components'.DS.'com_categories'.DS.'tables');
-		return JTable::getInstance($type, $prefix, $config);
+		$prefix = $prefix !== null
+			? $prefix
+			: (FLEXI_J40GE ? 'Joomla\\CMS\\Table\\' : 'CategoriesTable');
+
+		if (!FLEXI_J40GE)
+		{
+			JTable::addIncludePath(JPATH_ADMINISTRATOR.DS.'components'.DS.'com_categories'.DS.'tables');
+		}
+
+		return parent::getTable($type, $prefix, $config);
 	}
 
 
@@ -221,7 +237,8 @@ class FlexicontentModelCategory extends FCModelAdmin
 		}
 
 		// Clear the cache
-		$this->cleanCache();
+		$this->cleanCache(null, 0);
+		$this->cleanCache(null, 1);
 
 		return true;
 	}
@@ -234,94 +251,129 @@ class FlexicontentModelCategory extends FCModelAdmin
 	 * @return	void
 	 * @since	1.5
 	 */
-	function getInheritedParams($force=false)
+	public function getInheritedParams($force=false)
 	{
-		if ( $this->_inherited_params !== NULL && !$force ) return $this->_inherited_params;
-		$id = (int)$this->_id;
-		
+		if ($this->_inherited_params !== null && !$force)
+		{
+			return $this->_inherited_params;
+		}
+
+		$id = (int) $this->_id;
+
 		$app = JFactory::getApplication();
-		
+
 		// a. Clone component parameters ... we will use these as parameters base for merging
-		$compParams = clone(JComponentHelper::getComponent('com_flexicontent')->params);     // Get the COMPONENT only parameters
-		
+		$compParams = clone(JComponentHelper::getComponent('com_flexicontent')->params);
+
 		// b. Retrieve category parameters and create parameter object
-		if ($id) {
-			$query = 'SELECT params FROM #__categories WHERE id = ' . $id;
-			$this->_db->setQuery($query);
-			$catParams = $this->_db->loadResult();
+		if ($id)
+		{
+			$query = $this->_db->getQuery(true)
+				->select('params')
+				->from('#__categories')
+				->where('id = ' . (int) $id);
+			$catParams = $this->_db->setQuery($query)->loadResult();
 			$catParams = new JRegistry($catParams);
-		} else {
+		}
+		else
+		{
 			$catParams = new JRegistry();
 		}
-		
-		
+
+
 		// c. Retrieve inherited parameter and create parameter objects
 		global $globalcats;
 		$heritage_stack = array();
 		$inheritcid = $catParams->get('inheritcid', '');
 		$inheritcid_comp = $compParams->get('inheritcid', -1);
 		$inherit_parent = $inheritcid==='-1' || ($inheritcid==='' && $inheritcid_comp);
-		
+
 		// CASE A: inheriting from parent category tree
-		if ( $id && $inherit_parent && !empty($globalcats[$id]->ancestorsonly) ) {
-			$order_clause = 'level';  // 'FIELD(id, ' . $globalcats[$id]->ancestorsonly . ')';
-			$query = 'SELECT title, id, params FROM #__categories'
-				.' WHERE id IN ( ' . $globalcats[$id]->ancestorsonly . ')'
-				.' ORDER BY '.$order_clause.' DESC';
-			$this->_db->setQuery($query);
-			$catdata = $this->_db->loadObjectList('id');
-			if (!empty($catdata)) {
-				foreach ($catdata as $parentcat) {
+		if ($id && $inherit_parent && !empty($globalcats[$id]->ancestorsonly))
+		{
+			$query = $this->_db->getQuery(true)
+				->select('title, id, params')
+				->from('#__categories')
+				->where('id IN ( ' . $globalcats[$id]->ancestorsonly . ')')
+				->order('level DESC');
+				//>order('FIELD(id, ' . $globalcats[$id]->ancestorsonly . ' DESC)';
+			$catdata = $this->_db->setQuery($query)->loadObjectList('id');
+
+			if (!empty($catdata))
+			{
+				foreach ($catdata as $parentcat)
+				{
 					$parentcat->params = new JRegistry($parentcat->params);
 					array_push($heritage_stack, $parentcat);
 					$inheritcid = $parentcat->params->get('inheritcid', '');
 					$inherit_parent = $inheritcid==='-1' || ($inheritcid==='' && $inheritcid_comp);
-					if ( !$inherit_parent ) break; // Stop inheriting from further parent categories
+
+					// Stop inheriting from further parent categories
+					if (!$inherit_parent)
+					{
+						break;
+					}
 				}
 			}
 		}
-		
+
 		// CASE B: inheriting from specific category
-		else if ( $id && $inheritcid > 0 && !empty($globalcats[$inheritcid]) ){
-			$query = 'SELECT title, params FROM #__categories WHERE id = '. $inheritcid;
-			$this->_db->setQuery($query);
-			$catdata = $this->_db->loadObject();
-			if ($catdata) {
+		elseif ($id && $inheritcid > 0 && !empty($globalcats[$inheritcid]))
+		{
+			$query = $this->_db->getQuery(true)
+				->select('title, params')
+				->from('#__categories')
+				->where('id = ' . (int) $inheritcid);
+			$catdata = $this->_db->setQuery($query)->loadObject();
+
+			if ($catdata)
+			{
 				$catdata->params = new JRegistry($catdata->params);
 				array_push($heritage_stack, $catdata);
 			}
 		}
-		
-		
-		// *******************************************************************************************************
-		// Start merging of parameters, OVERRIDE ORDER: layout(template-manager)/component/ancestors-cats/category
-		// *******************************************************************************************************
-		
+
+
+		/**
+		 * Start merging of parameters, OVERRIDE ORDER: layout(template-manager)/component/ancestors-cats/category
+		 */
+
 		// -1. layout parameters will be placed on top at end of this code ...
-		
+
 		// 0. Start from component parameters
 		$params = new JRegistry();
 		$params->merge($compParams);
-		
+
 		// 1. Merge category's inherited parameters (e.g. ancestor categories or specific category)
-		while (!empty($heritage_stack)) {
+		while (!empty($heritage_stack))
+		{
 			$catdata = array_pop($heritage_stack);
-			if ($catdata->params->get('orderbycustomfieldid')==="0") $catdata->params->set('orderbycustomfieldid', '');
+			if ($catdata->params->get('orderbycustomfieldid') === '0')
+			{
+				$catdata->params->set('orderbycustomfieldid', '');
+			}
 			$params->merge($catdata->params);
 		}
-		
-		// 2. Merge category parameters -- CURRENT CATEGORY PARAMETERS MUST BE SKIPED ! we only want the inherited parameters
-		//if ($catParams->get('orderbycustomfieldid')==="0") $catParams->set('orderbycustomfieldid', '');
-		//$params->merge($catParams);
-		
-		// Retrieve Layout's parameters
+
+		// 2. Merge category parameters
+		/**
+		 * CURRENT CATEGORY PARAMETERS MUST BE SKIPED ! we only want the inherited parameters
+		 */
+		/*
+		if ($catParams->get('orderbycustomfieldid') === '0')
+		{
+			$catParams->set('orderbycustomfieldid', '');
+		}
+		$params->merge($catParams);
+		*/
+
+		// 3. Retrieve and merge Global Layout's parameters (placing these at TOP allows proper heritage)
 		$layoutParams = flexicontent_tmpl::getLayoutparams('category', $params->get('clayout'), '', $force);
 		$layoutParams = new JRegistry($layoutParams);
-		
-		// Allow global layout parameters to be inherited properly, placing on TOP of all others
+
 		$this->_inherited_params = clone($layoutParams);
 		$this->_inherited_params->merge($params);
-		
+
 		return $this->_inherited_params;
 	}
 
@@ -334,14 +386,14 @@ class FlexicontentModelCategory extends FCModelAdmin
 	 * @return	string		ini string of params
 	 * @since	1.5
 	 */
-	function getParams($id)
+	public function getParams($id)
 	{
-		$query 	= 'SELECT params FROM #__categories'
-				. ' WHERE id = ' . (int)$id
-				;
-		$this->_db->setQuery($query);
+		$query = $this->_db->getQuery(true)
+			->select('params')
+			->from('#__categories')
+			->where('id = ' . (int) $id);
 
-		return $this->_db->loadResult();
+		return $this->_db->setQuery($query)->loadResult();
 	}
 
 
@@ -351,10 +403,10 @@ class FlexicontentModelCategory extends FCModelAdmin
 	 * @param 	int 	$id of target
 	 * @param 	string 	$params to copy
 	 * @return 	boolean	true on success
-	 * 
+	 *
 	 * @since 1.5
 	 */
-	function copyParams($id, $params)
+	public function copyParams($id, $params)
 	{
 		$query 	= 'UPDATE #__categories'
 			. ' SET params = ' . $this->_db->Quote($params)
@@ -397,14 +449,12 @@ class FlexicontentModelCategory extends FCModelAdmin
 		$this->setState($this->getName().'.language', isset($data['language']) ? $data['language'] : null);
 
 		// Get the form.
-		$form = $this->loadForm($this->option.'.'.$this->getName(), $this->getName(), array('control' => 'jform', 'load_data' => $loadData));
+		$form = parent::getForm($data, $loadData);
 
 		if (empty($form))
 		{
 			return false;
 		}
-		$form->option = $this->option;
-		$form->context = $this->getName();
 
 		// Modify the form based on Edit State access controls.
 		if (empty($data['extension']))
@@ -445,10 +495,10 @@ class FlexicontentModelCategory extends FCModelAdmin
 	{
 		$pk = $pk ? (int) $pk : $this->_id;
 		$pk = $pk ? $pk : (int) $this->getState($this->getName().'.id');
-		
+
 		static $items = array();
 		if ( $pk && isset($items[$pk]) ) return $items[$pk];
-		
+
 		// Instatiate the JTable
 		$item = parent::getItem($pk);
 
@@ -467,12 +517,12 @@ class FlexicontentModelCategory extends FCModelAdmin
 
 			// Convert the created and modified dates to local user time for display in the form.
 			jimport('joomla.utilities.date');
-			
+
 			$site_zone = JFactory::getApplication()->getCfg('offset');
 			$user_zone = JFactory::getUser()->getParam('timezone', $site_zone);
 			$tz_string = $user_zone;
 			$tz = new DateTimeZone( $tz_string );
-			
+
 			if (intval($item->created_time))
 			{
 				$date = new JDate($item->created_time);
@@ -502,8 +552,10 @@ class FlexicontentModelCategory extends FCModelAdmin
 			{
 				if ($item->id != null)
 				{
-					$item->associations = CategoriesHelper::getAssociations($item->id, $item->extension);
-					JArrayHelper::toInteger($item->associations);
+					$item->associations = FLEXI_J40GE
+						? CategoriesHelper::getAssociations($item->id, $item->extension)
+						: \CategoriesHelper::getAssociations($item->id, $item->extension);
+					$item->associations = ArrayHelper::toInteger($item->associations);
 				}
 				else
 				{
@@ -615,30 +667,6 @@ class FlexicontentModelCategory extends FCModelAdmin
 	}
 
 
-	/**
-	 * Method to get parameters of parent categories
-	 *
-	 * @access public
-	 * @return	string
-	 * @since	1.6
-	 */
-	function getParentParams($cid)
-	{
-		if (empty($cid)) return array();
-		
-		global $globalcats;
-		$db = JFactory::getDbo();
-		
-		// Select the required fields from the table.
-		$query = ' SELECT id, params '
-			. ' FROM #__categories '
-			. ' WHERE id IN (' . $globalcats[$cid]->ancestors . ') '
-			. ' ORDER BY level ASC '
-			;
-		$db->setQuery( $query );
-		$data = $db->loadObjectList('id');
-		return $data;
-	}
 
 
 	/**
@@ -737,7 +765,8 @@ class FlexicontentModelCategory extends FCModelAdmin
 
 		if ($cleanCache)
 		{
-			$this->cleanCache(null, -1);
+			$this->cleanCache(null, 0);
+			$this->cleanCache(null, 1);
 		}
 		return true;
 	}
@@ -790,12 +819,93 @@ class FlexicontentModelCategory extends FCModelAdmin
 
 		return $return;
 	}
+	/**
+	 * Method to change the title & alias.
+	 *
+	 * @param   integer  $parent_id  If applicable, the id of the parent (e.g. assigned category)
+	 * @param   string   $alias      The alias / name.
+	 * @param   string   $title      The title / label.
+	 *
+	 * @return  array    Contains the modified title and alias / name.
+	 *
+	 * @since   1.7
+	 */
+	protected function generateNewTitle($parent_id, $alias, $title)
+	{
+		return parent::generateNewTitle($parent_id, $alias, $title);
+	}
+
+
+	/**
+	 * Method to check if the user can edit the record
+	 *
+	 * @return	boolean	True on success
+	 *
+	 * @since	3.2.0
+	 */
+	public function canEdit($record = null)
+	{
+		$record  = $record ?: $this->_record;
+		$user    = JFactory::getUser();
+		$asset   = $record && !$record->id ? $this->type_alias . '.' . $record->id : $this->option;
+		$isOwner = $record && $user->id && $record->created_user_id == $user->id;
+
+		$canDo    = $user->authorise('core.edit', $asset);
+		$canDoOwn	= $user->authorise('core.edit.own', $asset) && $isOwner;
+
+		return $canDo || $canDoOwn;
+	}
+
+
+	/**
+	 * Method to check if the user can edit record 's state
+	 *
+	 * @return	boolean	True on success
+	 *
+	 * @since	3.2.0
+	 */
+	public function canEditState($record = null)
+	{
+		$record  = $record ?: $this->_record;
+		$user    = JFactory::getUser();
+		$asset   = $record && !$record->id ? $this->type_alias . '.' . $record->id : $this->option;
+		$isOwner = $record && $user->id && $record->created_user_id == $user->id;
+
+		$canDo    = $user->authorise('core.edit.state', $asset);
+		$canDoOwn	= $user->authorise('core.edit.state.own', $asset) && $isOwner;
+
+		return $canDo || $canDoOwn;
+	}
+
+
+	/**
+	 * Method to check if the user can delete the record
+	 *
+	 * @return	boolean	True on success
+	 *
+	 * @since	3.2.0
+	 */
+	public function canDelete($record = null)
+	{
+		$record  = $record ?: $this->_record;
+		$user    = JFactory::getUser();
+		$asset   = $record && !$record->id ? $this->type_alias . '.' . $record->id : $this->option;
+		$isOwner = $record && $user->id && $record->created_user_id == $user->id;
+
+		$canDo    = $user->authorise('core.delete', $asset);
+		$canDoOwn	= $user->authorise('core.delete.own', $asset) && $isOwner;
+
+		return $canDo || $canDoOwn;
+	}
 
 
 	/**
 	 * Method to do some record / data preprocessing before call JTable::bind()
 	 *
 	 * Note. Typically called inside this MODEL 's store()
+	 *
+	 * @param   object     $record   The record object
+	 * @param   array      $data     The new data array
 	 *
 	 * @since	3.2.0
 	 */
@@ -825,8 +935,13 @@ class FlexicontentModelCategory extends FCModelAdmin
 		// *** By doing partial merging of these arrays we support having only a sub-set of them inside the form
 		// *** we will use mergeAttributes() instead of bind(), thus fields that are not set will maintain their current DB values,
 		// ***
-		$mergeProperties = array('params');
-		$mergeOptions = array('params_fset' => 'params', 'layout_type' => 'category', 'model_names' => array($this->option => $this->record_name, 'com_categories' => 'category'));
+		$mergeProperties = $this->mergeableGroups;
+		$mergeOptions = array(
+			'params_fset'  => 'params',
+			'layout_type'  => 'category',
+			'model_names'  => array($this->option => $this->getName(), 'com_categories' => 'category'),
+			'cssprep_save' => false,
+		);
 		$this->mergeAttributes($record, $data, $mergeProperties, $mergeOptions);
 
 		// Unset the above handled FIELDSETs from $data, since we selectively merged them above into the RECORD,
@@ -836,16 +951,17 @@ class FlexicontentModelCategory extends FCModelAdmin
 			unset($data[$prop]);
 		}
 
-
-		parent::_prepareBind($record, $data);
-
 		// Optionally copy parameters from another category
 		$copycid = (int) $data['copycid'];
+
 		if ($copycid)
 		{
 			unset($data['params']);
 			$record->params = $this->getParams($copycid);
 		}
+
+		// Call parent class bind preparation
+		parent::_prepareBind($record, $data);
 	}
 
 
@@ -853,6 +969,9 @@ class FlexicontentModelCategory extends FCModelAdmin
 	 * Method to do some work after record has been stored
 	 *
 	 * Note. Typically called inside this MODEL 's store()
+	 *
+	 * @param   object     $record   The record object
+	 * @param   array      $data     The new data array
 	 *
 	 * @since	3.2.0
 	 */
@@ -890,10 +1009,89 @@ class FlexicontentModelCategory extends FCModelAdmin
 	 *
 	 * Note. Typically called inside this MODEL 's store()
 	 *
+	 * @param	object   $record   The record object
+	 *
 	 * @since	3.2.0
 	 */
 	protected function _afterLoad($record)
 	{
 		parent::_afterLoad($record);
+	}
+
+
+	/**
+	 * Custom clean the cache
+	 *
+	 * @param   string   $group      Clean cache only in the given group
+	 * @param   integer  $client_id  Site Cache (0) / Admin Cache (1)
+	 *
+	 * @return  void
+	 *
+	 * @since   3.2.0
+	 */
+	protected function cleanCache($group = NULL, $client_id = 0)
+	{
+		if ($group)
+		{
+			parent::cleanCache($group, $client_id);
+		}
+
+		// An empty '$group' will clean '$this->option' which is the Component VIEW Cache, we will do a little more ...
+		else
+		{
+			/**
+			 * Note: null should be the same as $this->option ...
+			 * Maybe add option not clean Component's VIEW cache it will be too aggressive ...
+			 */
+			if (1)
+			{
+				parent::cleanCache(null, $client_id);
+				parent::cleanCache('com_content', $client_id);
+			}
+
+			parent::cleanCache('mod_articles_archive', $client_id);
+			parent::cleanCache('mod_articles_categories', $client_id);
+			parent::cleanCache('mod_articles_category', $client_id);
+			parent::cleanCache('mod_articles_latest', $client_id);
+			parent::cleanCache('mod_articles_news', $client_id);
+			parent::cleanCache('mod_articles_popular', $client_id);
+
+			parent::cleanCache('com_flexicontent_cats', $client_id);
+
+			// Indicate to our system plugin that its category cache needs to be cleaned
+			JFactory::getSession()->set('clear_cats_cache', 1, 'flexicontent');
+		}
+	}
+
+
+	/**
+	 * START OF MODEL SPECIFIC METHODS
+	 */
+
+
+
+	/**
+	 * Method to get parameters of parent categories
+	 *
+	 * @param   integer  $pk  The category id
+	 * @return	string   An array of JSON strings
+	 *
+	 * @since	3.3.0
+	 */
+	public function getParentParams($pk)
+	{
+		if (empty($pk))
+		{
+			return array();
+		}
+
+		global $globalcats;
+
+		$query = 'SELECT id, params'
+			. ' FROM #__categories'
+			. ' WHERE id IN (' . $globalcats[$pk]->ancestors . ')'
+			. ' ORDER BY level ASC'
+		;
+		return $this->_db->setQuery($query)->loadObjectList('id');
 	}
 }

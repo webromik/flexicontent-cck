@@ -5,7 +5,7 @@
  *
  * @author          Emmanuel Danan, Georgios Papadakis, Yannick Berges, others, see contributor page
  * @link            https://flexicontent.org
- * @copyright       Copyright © 2018, FLEXIcontent team, All Rights Reserved
+ * @copyright       Copyright Â© 2018, FLEXIcontent team, All Rights Reserved
  * @license         http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  */
 
@@ -50,6 +50,13 @@ abstract class FCModelAdmin extends JModelAdmin
 	 * @var string
 	 */
 	var $records_jtable = null;
+
+	/**
+	 * Column names
+	 */
+	var $state_col   = null;
+	var $name_col    = null;
+	var $parent_col  = null;
 
 	/**
 	 * Record primary key
@@ -300,74 +307,74 @@ abstract class FCModelAdmin extends JModelAdmin
 	 */
 	protected function _loadRecord($pk = null)
 	{
-		// Maybe we were given a name, try to use it if table has such a property
-		$name = !is_integer($pk) && !empty($pk) ? $pk : null;
-		if ($name)
+		$table = $this->getTable();
+
+		if (is_array($pk))
 		{
-			// Check 'name' columns and then check 'alias' column exists, if none then clear $name
-			$table = $this->getTable();
-			$name_property = property_exists($table, 'name')
-				? 'name'
-				: (property_exists($table, 'alias')
-					? 'alias'
-					: null);
-			$name = $name_property ? $name : null;
+			$data = $pk;
+		}
+		elseif ($pk)
+		{
+			/**
+			 * If PK is not an integer, then possibly we were given a name,
+			 * try to match it with columns 'name' or 'alias', if they exist
+			 */
+			if (!is_integer($pk))
+			{
+				$pk_col = null;
+				$columns = array('name', 'alias');
+
+				foreach($columns as $column)
+				{
+					$pk_col = !$pk_col && property_exists($table, $column) ? $column : $pk_col;
+				}
+			}
+
+			/**
+			 * Either use the 'name' / 'alias' / ... column, or use the primary column value
+			 */
+			$data = !empty($pk_col)
+				? array($pk_col => (string) $pk)
+				: array($table->getKeyName() => (int) $pk);
 		}
 
 		/**
 		 * Lets load the record if not already loaded
 		 */
-		if ( $this->_record===null || ($name && $this->_record->$name_property != $name) || (!$name && $this->_record->id != $pk) )
+		 
+		if (!empty($data))
 		{
-			// If PK was provided and it is also not a name, then treat it as a primary key value
-			$pk = $pk && !$name ? (int) $pk : (int) $this->_id;
+			$data_matches = $data && (boolean) $this->_record;
 
-			$name_quoted = $name ? $this->_db->Quote($name) : null;
-			if (!$name_quoted && !$pk)
+			foreach ($data as $k => $v)
+			{
+				$data_matches = $data_matches && (string) $this->_record->$k === (string) $v;
+			}
+
+			if (!$data_matches)
 			{
 				$this->_record = false;
-			}
-			else
-			{
-				$query = 'SELECT *'
-					. ' FROM #__' . $this->records_dbtbl
-					. ' WHERE '
-					. ( $name_quoted
-						? ' name='.$name_quoted
-						: ' id=' . (int) $pk
-					);
-				$this->_db->setQuery($query);
-				$this->_record = $this->_db->loadObject();
-			}
+				
+				// Attempt to load the row.
+				$return = $table->load($data);
 
-			if ($this->_record)
-			{
-				$this->_id = $this->_record->id;
-			}
+				// Check for a table object error.
+				if ($return === false && $table->getError())
+				{
+					$this->setError($table->getError());
+					return false;
+				}
 
-			// Extra steps after loading
-			$this->_afterLoad($this->_record);
+				// Set record
+				$this->_id = $table->id;
+				$this->_record = $table;
+
+				// Extra steps after loading
+				$this->_afterLoad($this->_record);
+			}
 		}
 
 		return (boolean) $this->_record;
-	}
-
-
-	/**
-	 * Method to get the last id
-	 *
-	 * @access	protected
-	 * @return	int
-	 * @since	1.0
-	 */
-	protected function _getLastId()
-	{
-		$query  = 'SELECT MAX(id)'
-			. ' FROM #__' . $this->records_dbtbl;
-		$this->_db->setQuery($query);
-		$lastid = $this->_db->loadResult();
-
-		return (int) $lastid;
 	}
 
 
@@ -644,7 +651,7 @@ abstract class FCModelAdmin extends JModelAdmin
 		\JForm::addFieldPath(JPATH_BASE.DS.'components'.DS.'com_flexicontent' . '/models/fields');
 
 		// Get the form.
-		$form_name    = $this->option . '.' . $this->getName();
+		$form_name    = $this->events_context;
 		$xml_filename = $this->getName();
 		$form = $this->loadForm($form_name, $xml_filename, array('control' => 'jform', 'load_data' => $loadData));
 
@@ -678,7 +685,14 @@ abstract class FCModelAdmin extends JModelAdmin
 
 		if (empty($data))
 		{
-			$data = $this->getItem();
+			$item = $this->getItem();
+
+			/**
+			 * Because the record data are meant for JForm before any other manipulations and before any
+			 * other data is added, convert our JTable record to a JObject coping only public properies
+			 */
+			$_prop_arr = $item->getProperties($public_only = true);
+			$data = ArrayHelper::toObject($_prop_arr, 'JObject');
 		}
 		else
 		{
@@ -705,7 +719,11 @@ abstract class FCModelAdmin extends JModelAdmin
 		$pk = $pk ? $pk : (int) $this->getState($this->getName().'.id');
 
 		static $items = array();
-		if ( $pk && isset($items[$pk]) ) return $items[$pk];
+
+		if ($pk && isset($items[$pk]))
+		{
+			return $items[$pk];
+		}
 
 		// Instatiate the JTable
 		$table = $this->getTable();
@@ -735,17 +753,13 @@ abstract class FCModelAdmin extends JModelAdmin
 		// Extra steps after loading
 		$this->_afterLoad($this->_record);
 
-		// Before any other manipulations and before other any other data is added,
-		// convert our JTable record to a JObject coping only public properies
-		$_prop_arr = $table->getProperties($public_only = true);
-		$item = ArrayHelper::toObject($_prop_arr, 'JObject');
-
 		// Add to cache if not a new record
 		if ($pk)
 		{
 			$items[$pk] = $this->_record;
 		}
-		return $item;
+
+		return $this->_record;
 	}
 
 
@@ -767,6 +781,28 @@ abstract class FCModelAdmin extends JModelAdmin
 		// Trigger the default form events.
 		$plugins_group = $plugins_group ?: $this->plugins_group;
 		parent::preprocessForm($form, $data, $plugins_group);
+	}
+
+
+	/**
+	 * Method to validate the form data.
+	 *
+	 * @param   \JForm  $form   The form to validate against.
+	 * @param   array   $data   The data to validate.
+	 * @param   string  $group  The name of the field group to validate.
+	 *
+	 * @return  array|boolean  Array of filtered data if valid, false otherwise.
+	 *
+	 * @see     \JFormRule
+	 * @see     \JFilterInput
+	 * @since   3.3.0
+	 */
+	public function validate($form, $data, $group = null)
+	{
+		// Handle a form that has some of its part missing according to configuration
+		$this->handlePartialForm($this->getForm(), $data);
+
+		return parent::validate($form, $data, $group);
 	}
 
 
@@ -870,7 +906,7 @@ abstract class FCModelAdmin extends JModelAdmin
 		$record = $record ?: $this->_record;
 		$user = JFactory::getUser();
 
-		return parent::canEdit($record);
+		return false;
 	}
 
 
@@ -886,7 +922,7 @@ abstract class FCModelAdmin extends JModelAdmin
 		$record = $record ?: $this->_record;
 		$user = JFactory::getUser();
 
-		return parent::canEditState($record);
+		return false;
 	}
 
 
@@ -901,7 +937,7 @@ abstract class FCModelAdmin extends JModelAdmin
 	{
 		$record = $record ?: $this->_record;
 
-		return parent::canDelete($record);
+		return false;
 	}
 
 
@@ -934,6 +970,10 @@ abstract class FCModelAdmin extends JModelAdmin
 	 */
 	function mergeAttributes(&$item, &$data, $properties, $options)
 	{
+		// Handle things like non present array fields
+		$form = $this->getForm();
+		$this->_canonicalData($form, $data);
+
 		//***
 		//*** Filter layout parameters if the were given, and merge them into existing layout parameters (in DB)
 		//***
@@ -1161,6 +1201,50 @@ abstract class FCModelAdmin extends JModelAdmin
 
 
 	/**
+	 * Method to modify specific attributes of a record saving them into the DB
+	 *
+	 * @param		int				$id				The record id
+	 * @param		array			$values		The attributes values indexed by attribute names
+	 * @param		int				$propname	The record's property that contains the attributes
+	 *
+	 * @return	boolean		True on success, false on failure
+	 *
+	 * @since	3.3.0
+	 */
+	public function setAttributeValues($id, $values, $propname = 'attribs')
+	{
+		// Attempt to load the row
+		$record = $this->getTable();
+
+		if (!$record->load($id))
+		{
+			$this->setError($record->getError());
+			return false;
+		}
+
+		// Try to decode the attributes
+		$attribs = json_decode($record->$propname);
+
+		// Set new attribute values
+		foreach ($values as $i => $v)
+		{
+			$attribs->$i = $v;
+		}
+
+		$record->$propname = json_encode($attribs);
+
+		// Store data in the db
+		if (!$record->store())
+		{
+			$this->setError($record->getError());
+			return false;
+		}
+
+		return true;
+	}
+
+
+	/**
 	 * Method to do some record / data preprocessing before call JTable::bind()
 	 *
 	 * Note. Typically called inside this MODEL 's store()
@@ -1263,28 +1347,56 @@ abstract class FCModelAdmin extends JModelAdmin
 
 
 	/**
-	 * Custom clean the cache
+	 * Method to canonicalize the form data
 	 *
-	 * @param   string   $group      Clean cache only in the given group
-	 * @param   integer  $client_id  Site Cache (0) / Admin Cache (1) or both Caches (-1)
+	 * @param   JForm   $form   A JForm object.
+	 * @param   mixed   $data   The data expected for the form.
 	 *
 	 * @return  void
 	 *
-	 * @since   3.2.0
+	 * @since   3.3.0
 	 */
-	protected function cleanCache($group = NULL, $client_id = -1)
+	protected function _canonicalData($form, & $data)
 	{
-		if ($client_id === -1)
+		foreach($this->mergeableGroups as $grp_name)
 		{
-			parent::cleanCache($group ?: 'com_flexicontent', 0);
-			parent::cleanCache($group ?: 'com_flexicontent', 1);
-		}
-		else
-		{
-			parent::cleanCache($group ?: 'com_flexicontent', $client_id);
+			if (is_object($data))
+			{
+				continue;
+			}
+
+			foreach ($form->getFieldsets($grp_name) as $fsname => $fieldSet)
+			{
+				foreach ($form->getFieldset($fsname) as $field)
+				{
+					if (!isset($data[$grp_name][$field->fieldname]))
+					{
+						$data[$grp_name][$field->fieldname] = false;
+					}
+				}
+			}
 		}
 	}
-	
+
+
+	/**
+	 * Method to get the last id
+	 *
+	 * @return	int
+	 *
+	 * @since	3.3.0
+	 */
+	protected function _getLastId()
+	{
+		$query = $this->_db->getQuery(true)
+			->select('MAX(id)')
+			->from('#__' . $this->records_dbtbl)
+			;
+		$lastid = (int) $this->_db->setQuery($query)->loadResult();
+
+		return $lastid;
+	}
+
 
 	/**
 	 * Returns a Table object, always creating it
@@ -1295,13 +1407,91 @@ abstract class FCModelAdmin extends JModelAdmin
 	 *
 	 * @return	JTable	A database object
 	 *
-	 * @since   3.2.0
+	 * @since   3.3.0
 	*/
 	public function getTable($type = null, $prefix = '', $config = array())
 	{
 		$type = $type ?: $this->records_jtable;
-		return JTable::getInstance($type, $prefix, $config);
+		return parent::getTable($type, $prefix, $config);
 	}
+
+
+	/**
+	 * Returns where conditions that must always be applied
+	 *
+	 * @param		JDatabaseQuery|bool   $q   DB Query object or bool to indicate returning an array or rendering the clause
+	 *
+	 * @return  JDatabaseQuery|array
+	 *
+	 * @since   3.3.0
+	 */
+	protected function _buildHardFiltersWhere($q = false)
+	{
+		$where = array();
+
+		foreach ($this->hard_filters as $n => $v)
+		{
+			$where[] = $this->_db->quoteName($n) . ' = ' .  $this->_db->Quote($v);
+		}
+
+		if ($q instanceof \JDatabaseQuery)
+		{
+			return $where ? $q->where($where) : $q;
+		}
+
+		return $q
+			? (count($where) ? implode(' AND ', $where) : ' 1 ')
+			: $where;
+	}
+
+
+	/**
+	 * Method to handle partial form data
+	 *
+	 * @param   JForm   $form   A JForm object.
+	 * @param   mixed   $data   The data expected for the form.
+	 *
+	 * @return  void
+	 *
+	 * @since   3.3.0
+	 */
+	protected function handlePartialForm($form, & $data)
+	{
+	}
+
+
+	/**
+	 * Custom clean the cache
+	 *
+	 * @param   string   $group      Clean cache only in the given group
+	 * @param   integer  $client_id  Site Cache (0) / Admin Cache (1)
+	 *
+	 * @return  void
+	 *
+	 * @since   3.2.0
+	 */
+	protected function cleanCache($group = NULL, $client_id = 0)
+	{
+		if ($group)
+		{
+			parent::cleanCache($group, $client_id);
+		}
+
+		// An empty '$group' will clean '$this->option' which is the Component VIEW Cache, we will do a little more ...
+		else
+		{
+			/**
+			 * Note: null should be the same as $this->option ...
+			 * Maybe add option not clean Component's VIEW cache it will be too aggressive ...
+			 */
+			if (1)
+			{
+				parent::cleanCache(null, $client_id);
+				parent::cleanCache('com_content', $client_id);
+			}
+		}
+	}
+
 
 	/**
 	 * START OF MODEL SPECIFIC METHODS

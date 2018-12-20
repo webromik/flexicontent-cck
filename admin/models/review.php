@@ -1,57 +1,54 @@
 <?php
 /**
- * @version 1.5 stable $Id: review.php 1577 2012-12-02 15:10:44Z ggppdk $
- * @package Joomla
- * @subpackage FLEXIcontent
- * @copyright (C) 2009 Emmanuel Danan - www.vistamedia.fr
- * @license GNU/GPL v2
- * 
- * FLEXIcontent is a derivative work of the excellent QuickFAQ component
- * @copyright (C) 2008 Christoph Lukes
- * see www.schlu.net for more information
+ * @package         FLEXIcontent
+ * @version         3.3
  *
- * FLEXIcontent is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * @author          Emmanuel Danan, Georgios Papadakis, Yannick Berges, others, see contributor page
+ * @link            https://flexicontent.org
+ * @copyright       Copyright © 2018, FLEXIcontent team, All Rights Reserved
+ * @license         http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  */
 
-// no direct access
 defined('_JEXEC') or die('Restricted access');
 
-jimport('legacy.model.admin');
 use Joomla\String\StringHelper;
-require_once('base.php');
+use Joomla\Utilities\ArrayHelper;
+
+require_once('base/base.php');
 
 /**
  * FLEXIcontent Component Review Model
  *
- * @package Joomla
- * @subpackage FLEXIcontent
- * @since		1.0
  */
 class FlexicontentModelReview extends FCModelAdmin
 {
 	/**
-	 * Record name
+	 * Record name, (parent class property), this is used for: naming session data, XML file of class, etc
 	 *
 	 * @var string
 	 */
-	var $record_name = 'review';
+	protected $name = 'review';
 
 	/**
-	 * Record database table 
+	 * Record database table
 	 *
 	 * @var string
 	 */
-	var $records_dbtbl = null;
+	var $records_dbtbl = 'flexicontent_reviews';
 
 	/**
 	 * Record jtable name
 	 *
 	 * @var string
 	 */
-	var $records_jtable = null;
+	var $records_jtable = 'flexicontent_reviews';
+
+	/**
+	 * Column names
+	 */
+	var $state_col   = 'state';
+	var $name_col    = 'title';
+	var $parent_col  = null;//'parent_id';
 
 	/**
 	 * Record primary key
@@ -68,7 +65,7 @@ class FlexicontentModelReview extends FCModelAdmin
 	var $_record = null;
 
 	/**
-	 * Events context to use during model FORM events triggering
+	 * Events context to use during model FORM events and diplay PREPARE events triggering
 	 *
 	 * @var object
 	 */
@@ -114,20 +111,23 @@ class FlexicontentModelReview extends FCModelAdmin
 	 *
 	 * @since 1.0
 	 */
-	function __construct()
+	public function __construct($config = array())
 	{
-		parent::__construct();
+		parent::__construct($config);
+
+		$this->canManage = FlexicontentHelperPerm::getPerm()->CanReviews;
+		$this->canCreate = FlexicontentHelperPerm::getPerm()->CanCreateReviews;
 	}
 
 
 	/**
 	 * Legacy method to get the record
 	 *
-	 * @access	public
 	 * @return	object
+	 *
 	 * @since	1.0
 	 */
-	function getReview($pk = null)
+	public function getReview($pk = null)
 	{
 		return parent::getRecord($pk);
 	}
@@ -136,9 +136,12 @@ class FlexicontentModelReview extends FCModelAdmin
 	/**
 	 * Method to initialise the record data
 	 *
-	 * @access	protected
+	 * @param   object      $record    The record being initialized
+	 * @param   boolean     $initOnly  If true then only a new record will be initialized without running the _afterLoad() method
+	 *
 	 * @return	boolean	True on success
-	 * @since	1.0
+	 *
+	 * @since	1.5
 	 */
 	protected function _initRecord(&$record = null, $initOnly = false)
 	{
@@ -160,17 +163,36 @@ class FlexicontentModelReview extends FCModelAdmin
 
 
 	/**
-	 * Method to store the record
+	 * Legacy method to store the record, use save() instead
 	 *
 	 * @param   array  $data  The form data.
 	 *
 	 * @return  boolean  True on success.
 	 *
-	 * @since   1.6
+	 * @since   3.2.0
 	 */
-	function store($data)
+	public function store($data)
 	{
 		return parent::store($data);
+	}
+
+
+	/**
+	 * Method to preprocess the form.
+	 *
+	 * @param   JForm   $form   A JForm object.
+	 * @param   mixed   $data   The data expected for the form.
+	 * @param   string  $plugins_group  The name of the plugin group to import and trigger
+	 *
+	 * @return  void
+	 *
+	 * @see     JFormField
+	 * @since   1.6
+	 * @throws  Exception if there is an error in the form event.
+	 */
+	protected function preprocessForm(JForm $form, $data, $plugins_group = null)
+	{
+		parent::preprocessForm($form, $data, $plugins_group);
 	}
 
 
@@ -202,50 +224,52 @@ class FlexicontentModelReview extends FCModelAdmin
 	/**
 	 * Method to check if the user can edit the record
 	 *
-	 * @access	public
 	 * @return	boolean	True on success
+	 *
 	 * @since	3.2.0
 	 */
-	function canEdit($record=null)
+	public function canEdit($record = null)
 	{
-		$record = $record ?: $this->_record;
-		$user = JFactory::getUser();
+		$record  = $record ?: $this->_record;
+		$user    = JFactory::getUser();
+
+		$isOwner = $record && $record->user_id == $user->id;
 
 		return !$record || !$record->id
-			? $user->authorise('flexicontent.createreviews', 'com_flexicontent')
-			: $user->authorise('flexicontent.managereviews', 'com_flexicontent');
+			? $this->canCreate
+			: (($this->canCreate && $isOwner) || $this->canManage);
 	}
 
 
 	/**
 	 * Method to check if the user can edit record 's state
 	 *
-	 * @access	public
 	 * @return	boolean	True on success
+	 *
 	 * @since	3.2.0
 	 */
-	function canEditState($record=null)
+	public function canEditState($record = null)
 	{
-		$record = $record ?: $this->_record;
-		$user = JFactory::getUser();
+		$record  = $record ?: $this->_record;
+		$user    = JFactory::getUser();
 
-		return $user->authorise('flexicontent.managereviews', 'com_flexicontent');
+		return $this->canManage;
 	}
 
 
 	/**
 	 * Method to check if the user can delete the record
 	 *
-	 * @access	public
 	 * @return	boolean	True on success
+	 *
 	 * @since	3.2.0
 	 */
-	function canDelete($record=null)
+	public function canDelete($record = null)
 	{
-		$record = $record ?: $this->_record;
-		$user = JFactory::getUser();
+		$record  = $record ?: $this->_record;
+		$user    = JFactory::getUser();
 
-		return $user->authorise('flexicontent.managereviews', 'com_flexicontent');
+		return $this->canManage;
 	}
 
 
@@ -254,10 +278,14 @@ class FlexicontentModelReview extends FCModelAdmin
 	 *
 	 * Note. Typically called inside this MODEL 's store()
 	 *
+	 * @param   object     $record   The record object
+	 * @param   array      $data     The new data array
+	 *
 	 * @since	3.2.0
 	 */
 	protected function _prepareBind($record, & $data)
 	{
+		// Call parent class bind preparation
 		parent::_prepareBind($record, $data);
 	}
 
@@ -266,6 +294,9 @@ class FlexicontentModelReview extends FCModelAdmin
 	 * Method to do some work after record has been stored
 	 *
 	 * Note. Typically called inside this MODEL 's store()
+	 *
+	 * @param   object     $record   The record object
+	 * @param   array      $data     The new data array
 	 *
 	 * @since	3.2.0
 	 */
@@ -280,10 +311,135 @@ class FlexicontentModelReview extends FCModelAdmin
 	 *
 	 * Note. Typically called inside this MODEL 's store()
 	 *
+	 * @param	object   $record   The record object
+	 *
 	 * @since	3.2.0
 	 */
 	protected function _afterLoad($record)
 	{
 		parent::_afterLoad($record);
+	}
+
+
+	/**
+	 * START OF MODEL SPECIFIC METHODS
+	 */
+
+
+	/**
+	 * Method to validate the data posted by the reviewer
+	 *
+	 * @param   array     $data  The (already JForm validated) record data
+	 *
+	 * @return  boolean   true on success, false on failure
+	 *
+	 * @since   3.3
+	 */
+	public function reviewerValidation($data)
+	{
+		$user = JFactory::getUser();
+		$db   = JFactory::getDbo();
+
+		$review_id   = $data['id'];
+		$content_id  = $data['content_id'];
+		$review_type = $data['type'];
+
+		$errors = array();
+
+		// Validate title, decode entities, and strip HTML
+		$title = flexicontent_html::dataFilter($data['title'], $maxlength=255, 'STRING', 0);
+
+		// Validate email
+		$email = $user->id ? $user->email : flexicontent_html::dataFilter($data['email'], $maxlength=255, 'EMAIL', 0);
+
+		// Validate text, decode entities and strip HTML
+		$text = flexicontent_html::dataFilter($data['text'], $maxlength=10000, 'STRING', 0);
+
+
+		/**
+		 * Check for validation failures on posted data
+		 */
+
+		if (!$content_id)
+		{
+			$this->setError('Content being reviewed not given (content_id is zero)');
+			return false;
+		}
+
+		if (!$email)
+		{
+			$this->setError('Email is invalid or empty');
+			return false;
+		}
+
+		if (!$user->id)
+		{
+			$query = 'SELECT id FROM #__users WHERE email = ' . $db->Quote($email);
+			$reviewer = $db->setQuery($query)->loadObject();
+
+			if ($reviewer)
+			{
+				$this->setError('Please login');
+				return false;
+			}
+		}
+
+		if (!$text)
+		{
+			$this->setError('Text is invalid or empty');
+			return false;
+		}
+
+		if ($review_type !== 'item')
+		{
+			$this->setError('review_type <> item is not yet supported');
+			return false;
+		}
+
+		// Return the further validated data
+		return $data;
+	}
+
+
+	/**
+	 * Method to toggle approved flag of a review
+	 *
+	 * @param		array			$cid          Array of record ids to set to a new state
+	 * @param		string    $approved     The new state
+	 *
+	 * @return	boolean	True on success
+	 *
+	 * @since	3.3.0
+	 */
+	public function approved($cid = array(), $value = 0, $cleanCache = true)
+	{
+		$cid = (array) $cid;
+		$cid = ArrayHelper::toInteger($cid);
+		$affected = 0;
+
+		if (count($cid))
+		{
+			$user     = JFactory::getUser();
+			$cid_list = implode(',', $cid);
+
+			$query = $this->_db->getQuery(true)
+				->update('#__' . $this->records_dbtbl)
+				->set('approved = ' . (int) $value)
+				->where('id IN (' . $cid_list . ')')
+				->where('(checked_out = 0 OR checked_out = ' . (int) $user->get('id') . ')');
+
+			$this->_db->setQuery($query)->execute();
+
+			// Get affected records, non records may have been locked by another user
+			$affected = $this->_db->getAffectedRows();
+
+			if ($cleanCache)
+			{
+				$this->cleanCache(null, 0);
+				$this->cleanCache(null, 1);
+			}
+		}
+
+		return $affected;
 	}
 }

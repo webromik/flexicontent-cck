@@ -1,60 +1,71 @@
 <?php
 /**
- * @version 1.5 stable $Id: view.html.php 1608 2012-12-25 04:31:58Z ggppdk $
- * @package Joomla
- * @subpackage FLEXIcontent
- * @copyright (C) 2009 Emmanuel Danan - www.vistamedia.fr
- * @license GNU/GPL v2
- * 
- * FLEXIcontent is a derivative work of the excellent QuickFAQ component
- * @copyright (C) 2008 Christoph Lukes
- * see www.schlu.net for more information
+ * @package         FLEXIcontent
+ * @version         3.3
  *
- * FLEXIcontent is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * @author          Emmanuel Danan, Georgios Papadakis, Yannick Berges, others, see contributor page
+ * @link            https://flexicontent.org
+ * @copyright       Copyright © 2018, FLEXIcontent team, All Rights Reserved
+ * @license         http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  */
 
-defined( '_JEXEC' ) or die( 'Restricted access' );
+defined('_JEXEC') or die('Restricted access');
 
-jimport('legacy.view.legacy');
+use Joomla\String\StringHelper;
+use Joomla\Utilities\ArrayHelper;
+
+JLoader::register('FlexicontentViewBaseRecord', JPATH_ADMINISTRATOR . '/components/com_flexicontent/helpers/base/view_record.php');
 
 /**
- * View class for the FLEXIcontent type screen
- *
- * @package Joomla
- * @subpackage FLEXIcontent
- * @since 1.0
+ * HTML View class for the Type screen
  */
-class FlexicontentViewType extends JViewLegacy
+class FlexicontentViewType extends FlexicontentViewBaseRecord
 {
-	function display($tpl = null)
-	{
-		// ***
-		// *** Initialise variables
-		// ***
+	var $proxy_option = null;
 
-		$app      = JFactory::getApplication();
-		$jinput   = $app->input;
-		$document = JFactory::getDocument();
-		$user     = JFactory::getUser();
-		$cparams  = JComponentHelper::getParams('com_flexicontent');
+	/**
+	 * Display the view
+	 */
+	public function display($tpl = null)
+	{
+		/**
+		 * Initialize variables, flags, etc
+		 */
+
+		$app        = JFactory::getApplication();
+		$jinput     = $app->input;
+		$document   = JFactory::getDocument();
+		$user       = JFactory::getUser();
+		$db         = JFactory::getDbo();
+		$cparams    = JComponentHelper::getParams('com_flexicontent');
+		$perms      = FlexicontentHelperPerm::getPerm();
 
 		// Get url vars and some constants
 		$option     = $jinput->get('option', '', 'cmd');
 		$view       = $jinput->get('view', '', 'cmd');
+		$task       = $jinput->get('task', '', 'cmd');
+		$controller = $jinput->get('controller', '', 'cmd');
+
+		$isAdmin  = $app->isAdmin();
+		$isCtmpl  = $jinput->getCmd('tmpl') === 'component';
 
 		$tip_class = ' hasTooltip';
-		$manager_view = $ctrl = 'types';
+		$manager_view = 'types';
+		$ctrl = 'types';
 		$js = '';
 
 
+		/**
+		 * Common view
+		 */
 
-		// ***
-		// *** Get record data, and check if record is already checked out
-		// ***
-		
+		$this->prepare_common_fcview();
+
+
+		/**
+		 * Get record data, and check if record is already checked out
+		 */
+
 		// Get model and load the record data
 		$model = $this->getModel();
 		$row   = $this->get('Item');
@@ -76,54 +87,67 @@ class FlexicontentViewType extends JViewLegacy
 		}
 
 
+		/**
+		 * Include needed files and add needed js / css files
+		 */
 
-		// ***
-		// *** Include needed files and add needed js / css files
-		// ***
-		
 		// Add css to document
-		!JFactory::getLanguage()->isRtl()
-			? $document->addStyleSheetVersion(JUri::base(true).'/components/com_flexicontent/assets/css/flexicontentbackend.css', FLEXI_VHASH)
-			: $document->addStyleSheetVersion(JUri::base(true).'/components/com_flexicontent/assets/css/flexicontentbackend_rtl.css', FLEXI_VHASH);
-		!JFactory::getLanguage()->isRtl()
-			? $document->addStyleSheetVersion(JUri::base(true).'/components/com_flexicontent/assets/css/j3x.css', FLEXI_VHASH)
-			: $document->addStyleSheetVersion(JUri::base(true).'/components/com_flexicontent/assets/css/j3x_rtl.css', FLEXI_VHASH);
-		
+		if ($isAdmin)
+		{
+			!JFactory::getLanguage()->isRtl()
+				? $document->addStyleSheetVersion(JUri::base(true).'/components/com_flexicontent/assets/css/flexicontentbackend.css', FLEXI_VHASH)
+				: $document->addStyleSheetVersion(JUri::base(true).'/components/com_flexicontent/assets/css/flexicontentbackend_rtl.css', FLEXI_VHASH);
+			!JFactory::getLanguage()->isRtl()
+				? $document->addStyleSheetVersion(JUri::base(true).'/components/com_flexicontent/assets/css/j3x.css', FLEXI_VHASH)
+				: $document->addStyleSheetVersion(JUri::base(true).'/components/com_flexicontent/assets/css/j3x_rtl.css', FLEXI_VHASH);
+		}
+		else
+		{
+			!JFactory::getLanguage()->isRtl()
+				? $document->addStyleSheetVersion(JUri::base(true).'/components/com_flexicontent/assets/css/flexicontent.css', FLEXI_VHASH)
+				: $document->addStyleSheetVersion(JUri::base(true).'/components/com_flexicontent/assets/css/flexicontent_rtl.css', FLEXI_VHASH);
+		}
+
 		// Add JS frameworks
 		flexicontent_html::loadFramework('select2');
+		flexicontent_html::loadFramework('touch-punch');
+		flexicontent_html::loadFramework('prettyCheckable');
+		flexicontent_html::loadFramework('flexi-lib');
 		flexicontent_html::loadFramework('flexi-lib-form');
-		
+
+		// Load custom behaviours: form validation, popup tooltips
+		JHtml::_('behavior.formvalidation');
+		JHtml::_('bootstrap.tooltip');
+
 		// Add js function to overload the joomla submitform validation
-		JHtml::_('behavior.formvalidation');  // load default validation JS to make sure it is overriden
 		$document->addScriptVersion(JUri::root(true).'/components/com_flexicontent/assets/js/admin.js', FLEXI_VHASH);
 		$document->addScriptVersion(JUri::root(true).'/components/com_flexicontent/assets/js/validate.js', FLEXI_VHASH);
 
 
+		/**
+		 * Create the toolbar
+		 */
 
-		// ***
-		// *** Create the toolbar
-		// ***
 		$toolbar = JToolbar::getInstance('toolbar');
 
 		// Creation flag used to decide if adding save and new / save as copy buttons are allowed
 		$cancreate = true;
-		
+
 		// SET toolbar title
 		!$isnew
-			? JToolbarHelper::title( JText::_( 'FLEXI_EDIT_TYPE' ), 'typeedit' )   // Editing existing type
-			: JToolbarHelper::title( JText::_( 'FLEXI_ADD_TYPE' ), 'typeadd' );    // Creating new type
+			? JToolbarHelper::title( JText::_( 'FLEXI_EDIT_TYPE' ), 'typeedit' )
+			: JToolbarHelper::title( JText::_( 'FLEXI_ADD_TYPE' ), 'typeadd' );
 
 
-
-		// ***
-		// *** Apply buttons
-		// ***
+		/**
+		 * Apply buttons
+		 */
 
 		// Apply button
 		$btn_arr = array();
 
 		// Add ajax apply only for existing records
-		if ( !$isnew )
+		if (!$isnew)
 		{
 			$btn_name = 'apply_ajax';
 			$btn_task = $ctrl.'.apply_ajax';
@@ -135,31 +159,34 @@ class FlexicontentViewType extends JViewLegacy
 		}
 
 		// Apply & Reload button   ***   (Apply Type, is a special case of new that has not loaded custom fieds yet, due to type not defined on initial form load)
-		$btn_name = 'apply';
-		$btn_task = $ctrl.'.apply';
-		$btn_title = !$isnew ? 'FLEXI_APPLY_N_RELOAD' : 'FLEXI_ADD';
+		if ($isAdmin && !$isCtmpl)
+		{
+			$btn_name = 'apply';
+			$btn_task = $ctrl.'.apply';
+			$btn_title = !$isnew ? 'FLEXI_APPLY_N_RELOAD' : 'FLEXI_ADD';
 
-		//JToolbarHelper::apply($btn_task, $btn_title, false);
+			//JToolbarHelper::apply($btn_task, $btn_title, false);
 
-		$btn_arr[$btn_name] = flexicontent_html::addToolBarButton(
-			$btn_title, $btn_name, $full_js="Joomla.submitbutton('".$btn_task."')", $msg_alert='', $msg_confirm='',
-			$btn_task, $extra_js='', $btn_list=false, $btn_menu=true, $btn_confirm=false, $btn_class="".$tip_class, $btn_icon="icon-save",
-			'data-placement="right" title=""', $auto_add = 0);
+			$btn_arr[$btn_name] = flexicontent_html::addToolBarButton(
+				$btn_title, $btn_name, $full_js="Joomla.submitbutton('".$btn_task."')", $msg_alert='', $msg_confirm='',
+				$btn_task, $extra_js='', $btn_list=false, $btn_menu=true, $btn_confirm=false, $btn_class="".$tip_class, $btn_icon="icon-save",
+				'data-placement="right" title=""', $auto_add = 0);
+		}
 
 		flexicontent_html::addToolBarDropMenu($btn_arr, 'apply_btns_group');
 
 
+		/**
+		 * Save buttons
+		 */
 
-		// ***
-		// *** Save buttons
-		// ***
 		$btn_arr = array();
 
 		$btn_name = 'save';
 		$btn_task = $ctrl.'.save';
 
 		//JToolbarHelper::save($btn_task);  //JToolbarHelper::custom( $btn_task, 'save.png', 'save.png', 'JSAVE', false );
-		
+
 		$btn_arr[$btn_name] = flexicontent_html::addToolBarButton(
 			'JSAVE', $btn_name, $full_js="Joomla.submitbutton('".$ctrl.".save')", $msg_alert='', $msg_confirm='',
 			$btn_task, $extra_js='', $btn_list=false, $btn_menu=true, $btn_confirm=false, $btn_class="".$tip_class, $btn_icon="icon-save",
@@ -167,7 +194,7 @@ class FlexicontentViewType extends JViewLegacy
 
 
 		// Add a save and new button, if user can create new records
-		if ($cancreate)
+		if (!$isCtmpl && $cancreate)
 		{
 			$btn_name = 'save2new';
 			$btn_task = $ctrl.'.save2new';
@@ -193,28 +220,31 @@ class FlexicontentViewType extends JViewLegacy
 					'data-placement="right" title="'.JText::_('FLEXI_SAVE_AS_COPY_INFO', true).'"', $auto_add = 0);
 			}
 		}
+
 		flexicontent_html::addToolBarDropMenu($btn_arr, 'save_btns_group');
 
 
-		// Cancel button
-		$isnew
-			? JToolbarHelper::cancel($ctrl.'.cancel')
-			: JToolbarHelper::cancel($ctrl.'.cancel', 'JTOOLBAR_CLOSE');
+		// Cancel button, TODO frontend modal close
+		if ($isAdmin && !$isCtmpl)
+		{
+			$isnew
+				? JToolbarHelper::cancel($ctrl.'.cancel', $isAdmin ? 'JTOOLBAR_CANCEL' : 'FLEXI_CANCEL')
+				: JToolbarHelper::cancel($ctrl.'.cancel', $isAdmin ? 'JTOOLBAR_CLOSE' : 'FLEXI_CLOSE_FORM');
+		}
 
 
-
-		// ***
-		// *** Get Layouts, load language of current selected template and apply Layout parameters values into the fields
-		// ***
+		/**
+		 * Get Layouts, load language of current selected template and apply Layout parameters values into the fields
+		 */
 
 		// Load language file of currently selected template
 		$_ilayout = $row->attribs->get('ilayout');
 		if ($_ilayout)
 		{
-			FLEXIUtilities::loadTemplateLanguageFile( $_ilayout );
+			FLEXIUtilities::loadTemplateLanguageFile($_ilayout);
 		}
 
-		// Get item layouts
+		// Get the item layouts, checking template of current layout for modifications
 		$themes = flexicontent_tmpl::getTemplates($_ilayout);
 		$tmpls  = $themes->items;
 
@@ -222,7 +252,7 @@ class FlexicontentViewType extends JViewLegacy
 		foreach ($tmpls as $tmpl)
 		{
 			if ($tmpl->name != $_ilayout) continue;
-			
+
 			$jform = new JForm('com_flexicontent.template.item', array('control' => 'jform', 'load_data' => false));
 			$jform->load($tmpl->params);
 			$tmpl->params = $jform;
@@ -230,10 +260,14 @@ class FlexicontentViewType extends JViewLegacy
 			{
 				$fieldname = $field->fieldname;
 				$value = $row->attribs->get($fieldname);
-				if (strlen($value)) $tmpl->params->setValue($fieldname, 'attribs', $value);
+
+				if (strlen($value))
+				{
+					$tmpl->params->setValue($fieldname, 'attribs', $value);
+				}
 			}
 		}
-		
+
 		// Check access level exists
 		$level_name = flexicontent_html::userlevel(null, $row->access, null, null, null, $_createlist = false);
 		if (empty($level_name))
@@ -243,10 +277,10 @@ class FlexicontentViewType extends JViewLegacy
 		}
 
 
+		/**
+		 * Add inline js to head
+		 */
 
-		// ***
-		// *** Add inline js to head
-		// ***
 		if ($js)
 		{
 			$document->addScriptDeclaration('jQuery(document).ready(function(){'
@@ -255,99 +289,27 @@ class FlexicontentViewType extends JViewLegacy
 		}
 
 
-		// Encode (UTF-8 charset) HTML entities form data so that they can be set as form field values
-		// NOTE: we will use JForm to output fields so this is redundant
+		/**
+		 * Encode (UTF-8 charset) HTML entities form data so that they can be set as form field values
+		 * NOTE: we will use JForm to output fields so this is redundant
+		 */
+
 		//JFilterOutput::objectHTMLSafe( $row, ENT_QUOTES, $exclude_keys = '' );
 
-		// Assign data to template
-		$this->perms    = FlexicontentHelperPerm::getPerm();
+
+		/**
+		 * Assign variables to view
+		 */
+
 		$this->document = $document;
 		$this->row      = $row;
 		$this->form     = $form;
+		$this->perms    = $perms;
 		$this->tmpls    = $tmpls;
 		$this->cparams  = $cparams;
+		$this->view     = $view;
+		$this->controller = $controller;
 
 		parent::display($tpl);
-	}
-	
-	
-	
-	/**
-	 * Method to diplay field showing inherited value
-	 *
-	 * @access	private
-	 * @return	void
-	 * @since	1.5
-	 */
-	function getInheritedFieldDisplay($field, $params, $_v = null)
-	{
-		$_v = $params ? $params->get($field->fieldname) : $_v;
-		
-		if ($_v==='' || $_v===null)
-		{
-			return $field->input;
-		}
-
-		elseif ($field->getAttribute('type')==='fcordering' || $field->getAttribute('type')==='list' || ($field->getAttribute('type')==='multilist' && $field->getAttribute('subtype')==='list'))
-		{
-			$_v = htmlspecialchars( $_v, ENT_COMPAT, 'UTF-8' );
-			if (preg_match('/<option\s*value="' . preg_quote($_v, '/') . '"\s*>(.*?)<\/option>/', $field->input, $matches))
-			{
-				return str_replace(
-					JText::_('FLEXI_USE_GLOBAL'),
-					JText::_('FLEXI_USE_GLOBAL') . ' (' . $matches[1] . ')',
-					$field->input);
-			}
-		}
-
-		elseif ($field->getAttribute('type')==='radio' || $field->getAttribute('type')==='fcradio' || ($field->getAttribute('type')==='multilist' && $field->getAttribute('subtype')==='radio'))
-		{
-			$_v = htmlspecialchars( $_v, ENT_COMPAT, 'UTF-8' );
-			return str_replace(
-				'value="'.$_v.'"',
-				'value="'.$_v.'" class="fc-inherited-value" ',
-				$field->input);
-		}
-
-		elseif ($field->getAttribute('type')==='fccheckbox' && is_array($_v))
-		{
-			$_input = $field->input;
-			foreach ($_v as $v)
-			{
-				$v = htmlspecialchars( $v, ENT_COMPAT, 'UTF-8' );
-				$_input = str_replace(
-					'value="'.$v.'"',
-					'value="'.$v.'" class="fc-inherited-value" ',
-					$_input);
-			}
-			return $_input;
-		}
-
-		elseif ($field->getAttribute('type')==='text')
-		{
-			$_v = htmlspecialchars( preg_replace('/[\n\r]/', ' ', $_v), ENT_COMPAT, 'UTF-8' );
-			return str_replace(
-				'<input ',
-				'<input placeholder="'.$_v.'" ',
-				preg_replace('/^(\s*<input\s[^>]+)placeholder="[^"]+"/i', '\1 ', $field->input)
-			);
-		}
-		elseif ($field->getAttribute('type')==='textarea')
-		{
-			$_v = htmlspecialchars(preg_replace('/[\n\r]/', ' ', $_v), ENT_COMPAT, 'UTF-8' );
-			return str_replace(
-				'<textarea ',
-				'<textarea placeholder="'.$_v.'" ',
-				preg_replace('/^(\s*<textarea\s[^>]+)placeholder="[^"]+"/i', '\1 ', $field->input)
-			);
-		}
-
-		elseif ( method_exists($field, 'setInherited') )
-		{
-			$field->setInherited($_v);
-			return $field->input;
-		}
-
-		return $field->input;
 	}
 }

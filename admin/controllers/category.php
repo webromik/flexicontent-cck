@@ -1,32 +1,26 @@
 <?php
 /**
- * @version 1.5 stable $Id$
- * @package Joomla
- * @subpackage FLEXIcontent
- * @copyright (C) 2009 Emmanuel Danan - www.vistamedia.fr
- * @license GNU/GPL v2
+ * @package         FLEXIcontent
+ * @version         3.3
  *
- * FLEXIcontent is a derivative work of the excellent QuickFAQ component
- * @copyright (C) 2008 Christoph Lukes
- * see www.schlu.net for more information
- *
- * FLEXIcontent is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * @author          Emmanuel Danan, Georgios Papadakis, Yannick Berges, others, see contributor page
+ * @link            https://flexicontent.org
+ * @copyright       Copyright © 2018, FLEXIcontent team, All Rights Reserved
+ * @license         http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  */
 
 defined('_JEXEC') or die;
+
+use Joomla\String\StringHelper;
+use Joomla\Utilities\ArrayHelper;
 
 // Import parent controller
 jimport('legacy.controller.form');
 
 /**
- * The Menu Item Controller
+ * FLEXIcontent Category Controller
  *
- * @package		Joomla.Administrator
- * @subpackage	com_categories
- * @since		1.6
+ * @since 3.3
  */
 class FlexicontentControllerCategory extends JControllerForm
 {
@@ -37,22 +31,23 @@ class FlexicontentControllerCategory extends JControllerForm
 	protected $extension;
 
 	/**
-	 * Constructor.
+	 * Constructor
 	 *
-	 * @param	array An optional associative array of configuration settings.
-	 * @see		JController
-	 * @since	1.6
+	 * @param   array   $config    associative array of configuration settings.
+	 *
+	 * @since 3.3
 	 */
 	public function __construct($config = array())
 	{
 		parent::__construct($config);
 
-		// Guess the JText message prefix. Defaults to the option.
+		// The extension for which the categories apply.
 		if (empty($this->extension))
 		{
-			$this->extension = JRequest::getCmd('extension', 'com_flexicontent');
+			$this->extension = $this->input->getCmd('extension', 'com_flexicontent');
 		}
 
+		// Register task aliases
 		$this->registerTask('apply',			'save');
 		$this->registerTask('apply_ajax',	'save');
 		$this->registerTask('save2new',		'save');
@@ -60,13 +55,31 @@ class FlexicontentControllerCategory extends JControllerForm
 	}
 
 
-	function add()
+	/**
+	 * Method to add a new record.
+	 *
+	 * @return  boolean  True if the record can be added, false if not.
+	 *
+	 * @since   1.6
+	 */
+	public function add()
 	{
-		parent::add();
+		return parent::add();
 	}
 
 
-	function edit($key = null, $urlVar = null)
+	/**
+	 * Method to edit an existing record.
+	 *
+	 * @param   string  $key     The name of the primary key of the URL variable.
+	 * @param   string  $urlVar  The name of the URL variable if different from the primary key
+	 *                           (sometimes required to avoid router collisions).
+	 *
+	 * @return  boolean  True if access level check and checkout passes, false otherwise.
+	 *
+	 * @since   1.6
+	 */
+	public function edit($key = null, $urlVar = null)
 	{
 		$cid = $this->input->get->get('cid', array(), 'array');
 
@@ -75,26 +88,48 @@ class FlexicontentControllerCategory extends JControllerForm
 			$this->input->post->set('cid', $cid);
 		}
 
-		parent::edit();
+		return parent::edit($key, $urlVar);
 	}
 
 
-	function save($key = null, $urlVar = null)
+	/**
+	 * Method to save a record.
+	 *
+	 * @param   string  $key     The name of the primary key of the URL variable.
+	 * @param   string  $urlVar  The name of the URL variable if different from the primary key (sometimes required to avoid router collisions).
+	 *
+	 * @return  boolean  True if successful, false otherwise.
+	 *
+	 * @since   1.6
+	 */
+	public function save($key = null, $urlVar = null)
 	{
-		parent::save();
+		$result = parent::save($key, $urlVar);
 
 		if ($this->input->get('fc_doajax_submit'))
 		{
-			JFactory::getApplication()->enqueueMessage(JText::_('FLEXI_ITEM_SAVED'), 'message');
-			echo flexicontent_html::get_system_messages_html();
-			exit();  // Ajax submit, do not rerender the view
+			JFactory::getApplication()->enqueueMessage(JText::_('FLEXI_CATEGORY_SAVED'), 'message');
+
+			// Ajax submit, do not rerender the view
+			jexit(flexicontent_html::get_system_messages_html());
 		}
+
+		return $result;
 	}
 
 
-	function cancel($key = null)
+	/**
+	 * Method to cancel an edit.
+	 *
+	 * @param   string  $key  The name of the primary key of the URL variable.
+	 *
+	 * @return  boolean  True if access level checks pass, false otherwise.
+	 *
+	 * @since   1.6
+	 */
+	public function cancel($key = null)
 	{
-		parent::cancel();
+		return parent::cancel($key);
 	}
 
 
@@ -118,8 +153,12 @@ class FlexicontentControllerCategory extends JControllerForm
 		}
 
 		$usercats = FlexicontentHelperPerm::getAllowedCats(
-			$user, $actions_allowed = array('core.create'),
-			$require_all = true, $check_published = true, $specific_catids = false, $find_first = true
+			$user,
+			$actions_allowed = array('core.create'),
+			$require_all = true,
+			$check_published = true,
+			$specific_catids = false,
+			$find_first = true
 		);
 
 		return count($usercats) > 0;
@@ -185,7 +224,7 @@ class FlexicontentControllerCategory extends JControllerForm
 		// Set the model
 		$model	= $this->getModel('Category');
 
-		$extension = JRequest::getCmd('extension', '');
+		$extension = $this->input->getCmd('extension', '');
 
 		if ($extension)
 		{
