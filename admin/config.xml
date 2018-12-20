@@ -73,7 +73,7 @@
 			<field name="unauthorized_page" type="text" size="50" default="" label="FLEXI_UNAUTHORIZED_URL" description="FLEXI_UNAUTHORIZED_URL_DESC" class="input-xxlarge" />
 
 		<field name="" type="separator" default="FLEXI_SEO_SEF_URLS" label="" level="level0" />
-			
+
 			<field name="" type="separator" default="FLEXI_URL_SEGMENTS_CREATION" label="" level="level3" />
 			<field name="add_item_sef_segment" type="fcradio" default="1" label="FLEXI_SHORTER_ITEM_OR_CATEGORY_SEF_URLS" description="FLEXI_SHORTER_ITEM_OR_CATEGORY_SEF_URLS_DESC" class="group-fcset fc-cleared">
 				<option value="0">FLEXI_SKIP_ITEM_SEGMENT_IN_ITEM_URLS</option>
@@ -290,6 +290,13 @@
 				<option value="0" show_list="" hide_list="disp_addbtn">FLEXI_HIDE</option>
 				<option value="1" show_list="disp_addbtn" hide_list="">FLEXI_SHOW</option>
 			</field>
+
+			<field name="nonauth_addbutton" type="radio" default="0" label="FLEXI_SHOW_ADD_BUTTON_TO_UNAUTHORIZED" description="FLEXI_SHOW_ADD_BUTTON_TO_UNAUTHORIZED_DESC" class="disp_addbtn btn-group group-fcinfo" >
+				<option value="0">FLEXI_NO</option>
+				<option value="1">FLEXI_YES_EXCLUDE_GUESTS</option>
+				<option value="2">FLEXI_YES</option>
+			</field>
+
 			<field name="addbutton_menu_itemid" type="fcmenuitem" component="com_flexicontent" link_filters="view=item%%layout=form" default="" label="FLEXI_ADD_NEW_ITEM_SUBMIT_MENU_ITEM" description="FLEXI_ADD_NEW_ITEM_SUBMIT_MENU_ITEM_DESC" class="disp_addbtn">
 				<option value="">FLEXI_SELECT</option>
 			</field>
@@ -1687,7 +1694,7 @@
 
 			<field name="" type="separator" default="FLEXI_LIMITS" icon_class="icon-lock" level="tab_open" box_type="1" remove_boxes="2" />
 			<field name="upload_maxsize" type="text" size="50" default="10000000" label="FLEXI_MAXIMUM_SIZE_LABEL" description="FLEXI_MAXIMUM_SIZE_DESC" />
-			<field name="upload_extensions" type="textarea" rows="2" default="bmp,csv,doc,docx,gif,ico,jpg,jpeg,odg,odp,ods,odt,pdf,png,ppt,pptx,swf,txt,xcf,xls,xlsx,zip,ics" label="FLEXI_ALLOWED_EXTENSIONS" description="FLEXI_ALLOWED_EXTENSIONS_DESC" class="input-xxlarge" />
+			<field name="upload_extensions" type="textarea" rows="2" default="bmp,csv,doc,docx,gif,ico,jpg,jpeg,odg,odp,ods,odt,pdf,png,ppt,pptx,txt,xcf,xls,xlsx,zip,ics" label="FLEXI_ALLOWED_EXTENSIONS" description="FLEXI_ALLOWED_EXTENSIONS_DESC" class="input-xxlarge" />
 
 			<field name="" type="separator" default="FLEXI_AUTO_RESIZE_ORIGINAL_IMAGES" description="" level="level3" />
 			<field name="" type="separator" default="FLEXI_AUTO_RESIZE_ORIGINAL_IMAGES_INFO" description="" level="level3" class="alert alert-info fcpadded"/>
@@ -1717,7 +1724,7 @@
 			
 			<field name="" type="separator" default="FLEXI_MIME_TYPES" label="" level="level3" />
 			<field name="upload_mime_illegal" type="text" size="50" default="text/html" label="FLEXI_ILLEGAL_MIME_TYPES" description="FLEXI_ILLEGAL_MIME_TYPES_DESC" class="input-xxlarge" />
-			<field name="upload_mime" type="textarea" rows="2" default="image/jpeg,image/gif,image/png,image/bmp,application/x-shockwave-flash,application/msword,application/excel,application/pdf,application/powerpoint,text/plain,application/x-zip" label="FLEXI_LEGAL_MIME_TYPES_LABEL" description="FLEXI_LEGAL_MIME_TYPES_DESC" class="input-xxlarge" />
+			<field name="upload_mime" type="textarea" rows="2" default="image/jpeg,image/gif,image/png,image/bmp,application/msword,application/excel,application/pdf,application/powerpoint,text/plain,application/x-zip" label="FLEXI_LEGAL_MIME_TYPES_LABEL" description="FLEXI_LEGAL_MIME_TYPES_DESC" class="input-xxlarge" />
 
 		<field name="" type="separator" default="FLEXI_FILES_CONF" level="tabset_close" box_type="1" remove_boxes="2" />
 	</fieldset>
@@ -1739,8 +1746,7 @@
 				<option value="1">FLEXI_BOTH</option>
 				<option value="2">FLEXI_MANUALLY_IN_FRONTEND</option>
 			</field>
-			<field name="jquery_ui_theme" type="fcradio" default="" label="jQuery UI Theme" description="..." class="btn-group group-fcinfo"> 
-				<option value="">Default</option>
+			<field name="jquery_ui_theme" type="fcradio" default="ui-lightness" label="jQuery UI Theme" description="..." class="btn-group group-fcinfo"> 
 				<option value="ui-lightness">ui-lightness</option>
 				<option value="smoothness">smoothness</option>
 			</field>

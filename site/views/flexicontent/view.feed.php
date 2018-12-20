@@ -51,9 +51,9 @@ class FlexicontentViewFlexicontent extends JViewLegacy
 		!FLEXI_J40GE ? JRequest::setVar('limit', $params->get('feed_limit')) : null;
 
 
-		/**
-		 *Get data from the model
-		 */
+		// ***********************
+		// Get data from the model
+		// ***********************
 
 		$cats = $this->get('Feed');
 

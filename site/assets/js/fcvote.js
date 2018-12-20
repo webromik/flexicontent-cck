@@ -3,8 +3,8 @@ jQuery(document).ready(function(){
 	//var live_site_root = url.substring(0, url.indexOf('/', 14)) + fc_root_uri;
 	
 	var currentURL = window.location;
-	var live_site_root = currentURL.protocol + '//' + currentURL.host + fc_root_uri;
-	var live_site_base = currentURL.protocol + '//' + currentURL.host + fc_base_uri;
+	window.live_site_root = currentURL.protocol + '//' + currentURL.host + fc_root_uri;
+	window.live_site_base = currentURL.protocol + '//' + currentURL.host + fc_base_uri;
 	var under_vote = false;
 	
 	if (jQuery('.fcvote').length)
@@ -43,8 +43,8 @@ jQuery(document).ready(function(){
 
 			var rating = jQuery(this).text();
 
-			var voteurl = live_site_base +
-				"/index.php?option=com_flexicontent&format=raw&task=ajaxvote&user_rating=" + rating + "&cid=" + itemID + "&xid=" + xid;
+			var voteurl = window.live_site_base +
+				'/index.php?option=com_flexicontent&format=raw&task=ajaxvote&user_rating=' + rating + '&cid=' + itemID + '&xid=' + xid;
 
 			jQuery.ajax({
 				url: voteurl,
@@ -146,31 +146,35 @@ jQuery(document).ready(function(){
 			box.slideUp(400, function(){ box.empty(); });
 			return;
 		}
-		box_loading.empty().addClass('ajax-loader').css('display', 'inline-block');
-		
-		var currentURL = window.location;
-		var live_site = currentURL.protocol + '//' + currentURL.host + fc_root_uri;
-		var url = live_site + "/index.php?option=com_flexicontent&format=raw&task=getreviewform&tagid="+tagid +"&content_id="+content_id +"&review_type="+review_type;
 
-		jQuery.ajax({
-			url: url,
-			dataType: "json",
-			data: {
-				lang: (typeof _FC_GET !="undefined" && 'lang' in _FC_GET ? _FC_GET['lang']: '')
-			},
-			success: function( data )
-			{
-				box_loading.empty().removeClass('ajax-loader').css('display', 'none');
-				if (typeof(data.html) && data.html)
+		if (1)
+		{
+			var url = window.live_site_root
+				+ '/index.php?option=com_flexicontent&format=raw&task=getreviewform&tagid=' + tagid
+				+ '&content_id=' + content_id + '&review_type=' + review_type;
+
+			box_loading.empty().addClass('ajax-loader').css('display', 'inline-block');
+
+			jQuery.ajax({
+				url: url,
+				dataType: "json",
+				data: {
+					lang: (typeof fc_sef_lang != 'undefined' ? fc_sef_lang : '')
+				},
+				success: function( data )
 				{
-					box.html(data.html).slideDown();
+					box_loading.empty().removeClass('ajax-loader').css('display', 'none');
+					if (typeof(data.html) && data.html)
+					{
+						box.html(data.html).slideDown();
+					}
+				},
+				error: function (xhr, ajaxOptions, thrownError) {
+					box_loading.empty().removeClass('ajax-loader').css('display', 'none');
+					alert('Error status: ' + xhr.status + ' , Error text: ' + thrownError);
 				}
-			},
-			error: function (xhr, ajaxOptions, thrownError) {
-				box_loading.empty().removeClass('ajax-loader').css('display', 'none');
-				alert('Error status: ' + xhr.status + ' , Error text: ' + thrownError);
-			}
-		});
+			});
+		}
 	}
 
 
@@ -189,36 +193,38 @@ jQuery(document).ready(function(){
 			}
 		}
 
-		box_loading.empty().addClass('ajax-loader').css('display', 'inline-block');
+		if (1)
+		{
+			var url = window.live_site_root
+				+ '/index.php?option=com_flexicontent&format=raw&task=storereviewform';
 
-		var currentURL = window.location;
-		var live_site = currentURL.protocol + '//' + currentURL.host + fc_root_uri;
-		var url = live_site + "/index.php?option=com_flexicontent&format=raw&task=storereviewform";
+			box_loading.empty().addClass('ajax-loader').css('display', 'inline-block');
 
-		jQuery.ajax({
-			url: url,
-			dataType: "json",
-			data: jQuery(form).serialize(),
-			success: function( data )
-			{
-				box_loading.empty().removeClass('ajax-loader').css('display', 'none');
-				if (typeof(data.html) && data.html)
+			jQuery.ajax({
+				url: url,
+				dataType: "json",
+				data: jQuery(form).serialize(),
+				success: function( data )
 				{
-					if (typeof(data.error) && data.error)
+					box_loading.empty().removeClass('ajax-loader').css('display', 'none');
+					if (typeof(data.html) && data.html)
 					{
-						box_loading.html(data.html).css('display', 'block');
+						if (typeof(data.error) && data.error)
+						{
+							box_loading.html(data.html).css('display', 'block');
+						}
+						else
+						{
+							box.html(data.html).show();
+						}
 					}
-					else
-					{
-						box.html(data.html).show();
-					}
+				},
+				error: function (xhr, ajaxOptions, thrownError) {
+					box_loading.empty().removeClass('ajax-loader').css('display', 'none');
+					alert('Error status: ' + xhr.status + ' , Error text: ' + thrownError);
 				}
-			},
-			error: function (xhr, ajaxOptions, thrownError) {
-				box_loading.empty().removeClass('ajax-loader').css('display', 'none');
-				alert('Error status: ' + xhr.status + ' , Error text: ' + thrownError);
-			}
-		});
+			});
+		}
 	}
 
 

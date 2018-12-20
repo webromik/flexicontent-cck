@@ -556,7 +556,9 @@ class FlexicontentViewCategory extends JViewLegacy
 			$_id = $jinput->get('id');
 			$jinput->set('id', $category->id);   // compatibility for plugin that will try to use this variable
 
-			$results = $dispatcher->trigger('onContentPrepare', array ('com_content.category', &$category, &$params, 0));
+			$results = FLEXI_J40GE
+				? $app->triggerEvent('onContentPrepare', array ('com_content.category', &$category, &$params, 0))
+				: $dispatcher->trigger('onContentPrepare', array ('com_content.category', &$category, &$params, 0));
 
 			$jinput->set('layout', $layout);  // Restore LAYOUT variable should some plugin have modified it
 			$jinput->set('id', $_id);   // Restore previous value of this variable
@@ -644,13 +646,19 @@ class FlexicontentViewCategory extends JViewLegacy
 			// These events return text that could be displayed at appropriate positions by our templates
 			$item->event = new stdClass();
 
-			$results = $dispatcher->trigger('onContentAfterTitle', array('com_content.category', &$item, &$params, 0));
+			$results = FLEXI_J40GE
+				? $app->triggerEvent('onContentAfterTitle', array('com_content.category', &$item, &$params, 0))
+				: $dispatcher->trigger('onContentAfterTitle', array('com_content.category', &$item, &$params, 0));
 			$item->event->afterDisplayTitle = trim(implode("\n", $results));
 
-			$results = $dispatcher->trigger('onContentBeforeDisplay', array('com_content.category', &$item, &$params, 0));
+			$results = FLEXI_J40GE
+				? $app->triggerEvent('onContentBeforeDisplay', array('com_content.category', &$item, &$params, 0))
+				: $dispatcher->trigger('onContentBeforeDisplay', array('com_content.category', &$item, &$params, 0));
 			$item->event->beforeDisplayContent = trim(implode("\n", $results));
 
-			$results = $dispatcher->trigger('onContentAfterDisplay', array('com_content.category', &$item, &$params, 0));
+			$results = FLEXI_J40GE
+				? $app->triggerEvent('onContentAfterDisplay', array('com_content.category', &$item, &$params, 0))
+				: $dispatcher->trigger('onContentAfterDisplay', array('com_content.category', &$item, &$params, 0));
 			$item->event->afterDisplayContent = trim(implode("\n", $results));
 
 			// Set the option back to 'com_flexicontent'
