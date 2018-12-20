@@ -151,7 +151,6 @@ function delAllFilters() {
 		<tr class="<?php echo 'row' . ($k % 2); ?>">
 
 			<td>
-				<div class="adminlist-table-row"></div>
 				<?php echo $this->pagination->getRowOffset( $i ); ?>
 			</td>
 

@@ -156,7 +156,6 @@ $tools_cookies['fc-filters-box-disp'] = JFactory::getApplication()->input->cooki
 	?>
 		<tr class="row<?php echo $i % 2; ?>">
 			<td>
-				<div class="adminlist-table-row"></div>
 				<?php echo $this->pagination->getRowOffset( $i ); ?>
 			</td>
 			<td>

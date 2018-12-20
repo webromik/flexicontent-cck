@@ -347,68 +347,69 @@ ul.fcrecords {
 
 
 /* Sortable records with delete / add actions */
-.records_container > ul > li.fcrecord .fcprop_box {
-	display: inline-block;
-}
-.records_container > ul > li.fcrecord .ordfield_handle,
-.records_container > ul > li.fcrecord .addfield_handle,
-.records_container > ul > li.fcrecord .delfield_handle {
-	display: inline-block;
-	width: 18px;
-	height: 16px;
-	line-height: 16px;
-	margin: 2px 2px 2px 5px;
-	padding: 3px;
-	outline: none;
-	cursor: pointer;
-	border: 1px solid #c0c0c0;
-	border-radius: 4px;
-	vertical-align: middle;
-}
-.records_container > ul > li.fcrecord .ordfield_handle {
-	margin: 2px 0px;
-	outline: none;
-	cursor: move;
-	border: 0;
-	opacity: 0.8;
-	filter: alpha(opacity=80);
-}
-.records_container .addfield_handle.fc_end {
-	min-width: 200px;
-	box-sizing: border-box;
-	float: right;
-	margin: 4px 4px;
-}
-.records_container > ul > li.fcrecord .addfield_handle.fc_after {
-	background: url("../images/insert_after_180.png") no-repeat scroll 50% 50% #f0f0f0;
-}
-.records_container > ul > li.fcrecord .addfield_handle.fc_before {
-	background: url("../images/insert_before_180.png") no-repeat scroll 50% 50% #f0f0f0;
-}
-.records_container > ul > li.fcrecord .delfield_handle {
-	background: url("../images/cancel.png") no-repeat scroll 50% 50% #f0f0f0;
-}
-.records_container > ul > li.fcrecord .ordfield_handle {
-	background: url("../images/move2.png") no-repeat scroll 50% 50% transparent;
-	cursor: move;
-}
-.records_container > ul > li.fcrecord .addfield_handle:hover,
-.records_container > ul > li.fcrecord .delfield_handle:hover {
-	background-color: #d7d7d7;
+.records_container > ul > li.fcrecord {
+	.fcprop_box {
+		display: inline-block;
+	}
+
+	.ordfield_handle,
+	.addfield_handle,
+	.delfield_handle {
+		display: inline-block;
+		width: 18px;
+		height: 16px;
+		line-height: 16px;
+		margin: 2px 2px 2px 5px;
+		padding: 3px;
+		outline: none;
+		cursor: pointer;
+		border: 1px solid #c0c0c0;
+		border-radius: 4px;
+		vertical-align: middle;
+	}
+	.ordfield_handle {
+		margin: 2px 0px;
+		outline: none;
+		cursor: move;
+		border: 0;
+		opacity: 0.8;
+		filter: alpha(opacity=80);
+	}
+
+	.addfield_handle.fc_after {
+		background: url("../images/insert_after_180.png") no-repeat scroll 50% 50% #f0f0f0;
+	}
+	.addfield_handle.fc_before {
+		background: url("../images/insert_before_180.png") no-repeat scroll 50% 50% #f0f0f0;
+	}
+	.delfield_handle {
+		background: url("../images/cancel.png") no-repeat scroll 50% 50% #f0f0f0;
+	}
+	.ordfield_handle {
+		background: url("../images/move2.png") no-repeat scroll 50% 50% transparent;
+		cursor: move;
+	}
+	.addfield_handle:hover,
+	.delfield_handle:hover {
+		background-color: #d7d7d7;
+	}
 }
 
-.records_container .fcrec_state_msg,
-.records_container .fcrec_cascaded_msg,
-.records_container .fcrec_general_msg {
-	margin: 3px;
-	display: inline-block;
-	padding: 1px 4px;
+.records_container {
+	.fcrec_state_msg,
+	.fcrec_cascaded_msg,
+	.fcrec_general_msg {
+		margin: 3px;
+		display: inline-block;
+		padding: 1px 4px;
+	}
+	.fcrecord_header {
+		margin: 6px 0 0 0;
+		padding: 0px 2px;
+		display: block;
+	}
 }
-.records_container .fcrecord_header {
-	margin: 6px 0 0 0;
-	padding: 0px 2px;
-	display: block;
-}
+
 .records_container .fcrecord_header .fcrecord_label,
 .records_container > ul > li.fcrecord > .fcrecord_prop {
 	margin: 2px !important;
@@ -430,21 +431,22 @@ ul.fcrecords {
 div.sorter-full-width {
 	width: 100% !important;
 	max-width: unset !important;
-}
-div.sorter-full-width > ul.fcrecords > li.fcrecord {
-	box-sizing: border-box;
-	width: 100%;
-	margin: 0px 0 !important;
-}
-div.sorter-full-width > ul.fcrecords > li.fcrecord .fcprop_box {
-	float: none;
-}
-div.sorter-full-width > ul.fcrecords > li.fcrecord .ordfield_handle,
-div.sorter-full-width > ul.fcrecords > li.fcrecord .addfield_handle,
-div.sorter-full-width > ul.fcrecords > li.fcrecord .delfield_handle {
-	float: none;
-}
 
+	> ul.fcrecords > li.fcrecord {
+		box-sizing: border-box;
+		width: 100%;
+		margin: 0px 0 !important;
+
+		.fcprop_box {
+			float: none;
+		}
+		.ordfield_handle,
+		.addfield_handle,
+		.delfield_handle {
+			float: none;
+		}
+	}
+}
 
 
 /**************************
@@ -460,147 +462,160 @@ table.fcmanlist {
 	color: #555;
 	width: auto;
 	margin-bottom: 20px;
-}
 
-/* HEAD row, e.g. bottom border only */
-table.adminlist thead tr {
-	border-bottom: 1px solid #aaa !important; /* forced, combines with table, row, cell borders */
-}
 
-/* HEAD cell */
-table.adminlist thead th {
-	background: none repeat scroll 0 0 #fff !important; /* forced, combines with table, row, cell borders */
-	border: none;
-	border-width: 0px !important; /* forced, avoid border of cell overlapping over the border of the row */
-	color: #555;
-	text-align: unset;
-	padding: 6px 4px;
-}
+	/* HEAD row, e.g. bottom border only */
+	thead tr {
+		border-bottom: 1px solid #aaa !important; /* forced, combines with table, row, cell borders */
+	}
 
-table.adminlist thead th.center,
-table.adminlist td.center {
-	text-align: center !important;
-}
-table.adminlist thead th.right,
-table.adminlist td.right {
-	text-align: right !important;
-}
-table.adminlist thead th.left,
-table.adminlist td.left {
-	text-align: left !important;
-}
-table.adminlist thead a:hover {
-	text-decoration: none;
-}
-table.adminlist thead th img {
-	padding-right: 3px;
-	vertical-align: middle;
-}
-table.adminlist thead td.right .radio {
-	display: block;
-	margin-bottom: 5px;
-}
-table.adminlist thead th .filterdel img {
-	vertical-align: bottom;
-}
+	/* HEAD cell */
+	thead th {
+		background: transparent !important; /* forced, combines with table, row, cell borders */
+		border: none;
+		border-width: 0px !important; /* forced, avoid border of cell overlapping over the border of the row */
+		color: #555;
+		text-align: unset;
+		padding: 6px 4px;
+	}
 
-/* Table cell */
-table.adminlist td {
-	padding: 4px;
-}
-table.adminlist tr td:first-child::after {
-	content: "";
-	display: inline-block;
-	vertical-align: middle;
-	min-height: 30px;
-}
-table.adminlist input[type="text"] {
-	width: auto !important;  /* forced to avoid fitting problems */
-	padding-right: 0px !important;  /* forced to save space */
-	padding-left: 0px !important;  /* forced to save space */
-}
+	th,
+	td {
+		vertical-align: middle;
+	}
 
-/* Highlighted columns, e.g. filtered */
-table.adminlist tbody tr td.filtered_column,
-table.adminlist tbody tr.row0 td.filtered_column,
-table.adminlist tbody tr.row1 td.filtered_column {
-	background: #F0F0F0;
-}
-/* header cell inside tbody */
-table.adminlist tbody th {
-	font-weight: bold;
-}
+	thead th.center,
+	td.center {
+		text-align: center !important;
+	}
+	thead th.left,
+	td.left {
+		text-align: left !important;
+	}
+	thead th.right,
+	td.right {
+		text-align: right !important;
+	}
+	thead a:hover {
+		text-decoration: none;
+	}
+	thead th img {
+		padding-right: 3px;
+		vertical-align: middle;
+	}
+	thead td.right .radio {
+		display: block;
+		margin-bottom: 5px;
+	}
+	thead th .filterdel img {
+		vertical-align: bottom;
+	}
 
-/* TR, NO background default align right */
-table.adminlist tbody tr:first-child {
-	border-top: 1px solid #aaa !important; /* forced, combines with table, row, cell borders */
-}
-table.adminlist tbody tr {
-	border-top: 1px solid #dadada !important; /* forced, combines with table, row, cell borders */
-	background: transparent !important;
-	text-align: right;
-}
-table.adminlist tbody tr.collapsed_row {
-	visibility: collapse;
-}
+	/* Table cell */
+	td {
+		padding: 4px;
+	}
+	input[type="text"] {
+		width: auto !important;  /* forced to avoid fitting problems */
+		padding-right: 0px !important;  /* forced to save space */
+		padding-left: 0px !important;  /* forced to save space */
+	}
 
-/* TR.row0 TR.row1 differences */
-table.adminlist tbody tr td {
-	background: none repeat scroll 0 0 #FFFFFF;
-	border: none;
-	border-width: 0px !important; /* fored, to avoid border of cell overlapping over the border of the row */
-	text-align: unset;
-}
-table.adminlist tbody tr.row1 td {
-	background: none repeat scroll 0 0 #F7F7F7;
-}
+	/* Highlighted columns, e.g. filtered */
+	tbody tr td.filtered_column,
+	tbody tr.row0 td.filtered_column,
+	tbody tr.row1 td.filtered_column {
+		background: #F0F0F0;
+	}
+	/* header cell inside tbody */
+	tbody th {
+		font-weight: bold;
+	}
 
-/* Mouse over ROW CELL */
-table.adminlist tbody tr.row0:hover td,
-table.adminlist tbody tr.row1:hover td,
-table.adminlist tr:hover td.filtered_column {
-	background: #F7F7E7 !important;
-}
-.adminlist-table-row {
-	position: absolute;
-	top: 0;
-	right: 0;
-	width: 100%;
-	height: 100%;
-	z-index: -1;
-	background-color: #f0f0f0;
-	background-image: -webkit-repeating-linear-gradient(135deg,#e7e7e7,#e7e7e7 10px,#e0e0e0 10px,#e0e0e0 20px);
-	background-image: repeating-linear-gradient(135deg,#e7e7e7,#e7e7e7 10px,#e0e0e0 10px,#e0e0e0 20px);
-}
+	/* TR, NO background default align right */
+	tbody tr:first-child {
+		border-top: 1px solid #aaa !important; /* forced, combines with table, row, cell borders */
+	}
+	tbody tr {
+		border-top: 1px solid #dadada !important; /* forced, combines with table, row, cell borders */
+		background: transparent !important;
+		text-align: right;
+	}
+	tbody tr.collapsed_row {
+		visibility: collapse;
+	}
 
-/* FOOTER of table */
-table.adminlist tfoot {
-	border-top: 1px solid #ddd !important; /* forced, combines with table, row, cell borders */
-}
-table.adminlist tfoot tr {
-	color: #333333;
-	text-align: center;
-}
-table.adminlist tfoot td,
-table.adminlist tfoot th {
-	background-color: #fff;
-	border: none;
-	border-width: 0px !important; /* forced, to avoid border of cell overlapping over the border of the row */
-	text-align: center;
-}
+	/* TR.row0 TR.row1 differences */
+	tbody tr td {
+		background: none repeat scroll 0 0 #FFFFFF;
+		border: none;
+		border-width: 0px !important; /* fored, to avoid border of cell overlapping over the border of the row */
+		text-align: unset;
+	}
+	tbody tr.row1 td {
+		background: none repeat scroll 0 0 #F7F7F7;
+	}
 
-/* ORDER column no wrapping and proper alignment */
-table.adminlist td.order {
-	text-align: center;
-	white-space: nowrap;
-	width: auto;
-}
+	/* Mouse over ROW CELL */
+	tbody tr.row0:hover td,
+	tbody tr.row1:hover td,
+	tr:hover td.filtered_column {
+		background: #F7F7E7 !important;
+	}
 
-/* IF PAGINATION is inside the table the force center alignment */
-table.adminlist .pagination {
-	display: inline-block;
-	margin: 4px auto 2px;
-	padding: 0;
+	.adminlist-table-row {
+		position: absolute;
+		top: 0;
+		right: 0;
+		width: 100%;
+		height: 100%;
+		z-index: -1;
+		background-color: #f0f0f0;
+		background-image: -webkit-repeating-linear-gradient(135deg,#e7e7e7,#e7e7e7 10px,#e0e0e0 10px,#e0e0e0 20px);
+		background-image: repeating-linear-gradient(135deg,#e7e7e7,#e7e7e7 10px,#e0e0e0 10px,#e0e0e0 20px);
+	}
+
+	/* FOOTER of table */
+	tfoot {
+		border-top: 1px solid #ddd !important; /* forced, combines with table, row, cell borders */
+	}
+	tfoot tr {
+		color: #333333;
+		text-align: center;
+	}
+	tfoot td,
+	tfoot th {
+		background-color: #fff;
+		border: none;
+		border-width: 0px !important; /* forced, to avoid border of cell overlapping over the border of the row */
+		text-align: center;
+	}
+
+	/* ORDER column */
+	td.col_order {
+	}
+			
+	/* Checkbox column */
+	th.col_cb {
+		padding-bottom: 0px;
+	}
+	td.col_cb {
+		padding-top: 7px;
+	}
+
+	/* Notes column (scheduled, expired, review needed, other?) */
+	td.col_notes {
+		padding-top: 7px;
+		font-size: 110%;
+	}
+
+	/* IF PAGINATION is inside the table the force center alignment */
+	.pagination {
+		display: flex;
+		box-sizing: border-box;
+		margin-left: auto;
+		margin-right: auto;
+	}
 }
 
 
@@ -761,29 +776,7 @@ span.fc_select_button:hover {
 	background-color: white;
 }
 
-div label.state_box,
-div label.lang_box {
-	display: inline-block;
-	margin: 4px 12px 0px 0px;
-	padding: 0px !important;
-	vertical-align: top;
-	line-height: 1em;
-	white-space: nowrap;
-}
-div label.state_box input,
-div label.state_box img,
-div label.lang_box input,
-div label.lang_box img {
-	display: inline-block;
-	margin: 0px;
-	padding: 0px;
-	vertical-align: top;
-}
-div label.lang_box img {
-	border: 1px solid lightgray;
-}
-
-/* language associations */
+/* Language associations */
 .fc_assoc_translation img {
 	border: 1px solid lightgray;
 	padding: 0px;
@@ -867,8 +860,26 @@ div fieldset.panelform {
 	user-select: none;
 	outline-width: 0;
 }
+#flexicontent {
+	.input-group > input {
+		border-width: 1px;
+		border-style: solid;
+	}
+	.input-group > input:first-child,
+	.input-group > input:last-child {
+		border-radius: 4px;
+	}
+	.btn[class^="btn-outline-"],
+	.btn[class*=" btn-outline-"] {
+		border-width: 1px;
+		border-radius: 4px;
+	}
+	.btn.btn-sm {
+		padding: 4px 4px 3px 5px;
+	}
+}
 @media (min-width: 1020px) {
-	.btn.spaced-btn,
+	.com_flexicontent .btn.spaced-btn,
 	#toolbar-preview_btns_group {
 		margin-right: 32px;
 	}
@@ -1075,13 +1086,19 @@ form div.container_fcfield > select {
 #flexicontent div fieldset.panelform .input-prepend > button {
 	margin-right: 0px;
 }
-#flexicontent div .input-append > .btn:not(:last-child) {
+#flexicontent div .btn-group > *:not(:last-child),
+#flexicontent div .input-append > *:not(:last-child) {
 	border-top-left-radius: 0px;
 	border-bottom-left-radius: 0px;
+	vertical-align: middle;
 }
-#flexicontent div .input-prepend > .btn:not(:first-child) {
+#flexicontent div .btn-group > *:not(:first-of-type),
+#flexicontent div .input-prepend > *:not(:first-child),
+#flexicontent div .btn-group > *:not(:first-child):not(label),
+#flexicontent div .input-prepend > *:not(:first-child):not(label) {
 	border-top-right-radius: 0px;
 	border-bottom-right-radius: 0px;
+	vertical-align: middle;
 }
 
 #flexicontent div fieldset.panelform :not(.container_fcfield) fieldset.radio,
@@ -1274,6 +1291,7 @@ body .nowrap_box .container_fcfield:not(.controls),
 #flexicontent .full_width_980:first-child {
 	padding: 0 32px 0 0;
 }
+#flexicontent .col-md-6.full_width_980.padded_wrap_box,
 #flexicontent .span6.full_width_980.padded_wrap_box {
 	padding: 0;
 }
@@ -1289,6 +1307,33 @@ body .nowrap_box .container_fcfield:not(.controls),
 	}
 }
 
+#flexicontent .col-md-6.full_width_1270,
+#flexicontent .span6.full_width_1270 {
+	width: 50%;
+}
+#flexicontent .full_width_1270 {
+	padding: 0;
+	margin: 0%;
+	box-sizing: border-box;
+}
+#flexicontent .full_width_1270:first-child {
+	padding: 0 32px 0 0;
+}
+#flexicontent .col-md-6.full_width_1270.padded_wrap_box,
+#flexicontent .span6.full_width_1270.padded_wrap_box {
+	padding: 0;
+}
+@media (max-width: 1269px) {
+	#flexicontent .full_width_1270 {
+		width: 100% !important;
+		padding: 0% !important;
+		margin: 0% !important;
+		clear: both !important;
+	}
+	#flexicontent .full_width_1270.padded_wrap_box {
+		margin-top: 48px !important;
+	}
+}
 
 #flexicontent .span6.full_width_1340 {
 	width: 50%;
@@ -1301,8 +1346,8 @@ body .nowrap_box .container_fcfield:not(.controls),
 #flexicontent .full_width_1340:first-child {
 	padding: 0 32px 0 0;
 }
-
-#flexicontent .full_width_1340.padded_wrap_box {
+#flexicontent .col-md-6.full_width_1340.padded_wrap_box,
+#flexicontent .span6.full_width_1340.padded_wrap_box {
 	padding: 0;
 }
 @media (max-width: 1339px) {
@@ -1423,6 +1468,7 @@ body.contentpane.modal #flexicontent {
 
 /* Override modal CSS ... this assumes JS resizes the outer container height */
 div.field-media-wrapper > div.modal {
+	height: 70%;
 	.modal-body {
 		height: 100% !important;
 		max-height: 100% !important;
@@ -1716,7 +1762,8 @@ table.fc-form-tbl td {
 	padding: 2px 0px 6px 24px;
 }
 table.fc-form-tbl td.fc-nopad-h-cell {
-	padding: 2px 0px 6px 0px;
+	padding-left: 0px;
+	padding-right: 0px;
 }
 table.fc-form-tbl.fccompact td {
 	padding: 0px 0px 4px 8px;
@@ -1731,6 +1778,13 @@ table.fc-form-tbl td.key {
 }
 table.fc-form-tbl.fccompact td.key {
 	min-width: auto;
+}
+
+table.fc-form-tbl.fc-padded-v {
+	td, td.key {
+		vertical-align: top;
+		padding-bottom: 20px;
+	}
 }
 
 table.fc-form-tbl.fcfullwidth {
@@ -1790,6 +1844,55 @@ table.fc-form-tbl td.key > .fc-prop-lbl {
 	font-weight: normal !important;
 	text-decoration: line-through !important;
 	font-style: italic !important;
+}
+
+/* Hide it (almost), till JS is initialized */
+select.fc_is_selmultiple.use_select2_lib {
+	max-height: 0 !important;
+}
+
+/* Convert these SELECTs to an compact drop-down arrow ... */
+select.fc_is_selarrow + input {
+	margin-left: 1.4em !important;
+}
+div.fc_is_selarrow {
+	position: absolute !important;
+}
+select.fc_is_selarrow {
+	position: absolute !important;
+	max-width: 1.4em !important;
+	margin: 0 !important;
+	height: 100% !important;
+	padding-left: 0 !important;
+	padding-right: 0 !important;
+	box-sizing: border-box !important;
+	display: inline-block;
+	border: 0 !important;
+	box-shadow: 0px 0px 0px 1px #c0c0c0 inset;
+}
+select.fc_is_selarrow:hover, select.fc_is_selarrow:focus {
+	position: absolute;
+	width: 100% !important;
+	max-width: unset !important;
+	z-index: 1050;
+	border: 1px solid #c0c0c0 !important;
+	box-shadow: none;
+}
+
+/* Fallback behaviour if select2 JS fails to initialize */
+select[multiple].use_select2_lib {
+	position: absolute;
+	font-size: 14px !important;
+	max-height: 2.6em !important;
+}
+select[multiple].use_select2_lib:hover, select[multiple].use_select2_lib:focus {
+	height: 15em !important;
+	max-height: unset !important;
+	width: 100% !important;
+	max-width: unset !important;
+	z-index: 1050;
+	box-shadow: 0 2px 4px rgba(0,0,0,0.15) inset, 0 1px 2px rgba(0,0,0,0.15);
+	border: 1px solid #d0d0d0 !important;
 }
 
 
@@ -1916,13 +2019,20 @@ div.current ul.config-option-list li fieldset {
  * e.g. Drop down menu of buttons
  */
  
+.subhead #toolbar.btn-toolbar > *,
+.subhead #toolbar.btn-toolbar > *:first-of-type {
+	margin-left: .75rem;
+}
+.subhead #toolbar.btn-toolbar > *:first-child {
+	margin-left: 0;
+}
+
 #toolbar .buttons.btn-group {
 	.toolbar {
 		text-align: right;
 
-	> [class^="icon-"],
-	> [class*=" icon-"] {
-			float: right;
+		> [class^="icon-"],
+		> [class*=" icon-"] {
 			text-align: center;
 		}
 	}
@@ -1932,16 +2042,21 @@ div.current ul.config-option-list li fieldset {
 		border: unset;
 		box-shadow: unset;
 		padding: 0;
+		min-width: 100% !important;
+		width: auto !important;
+		top: 100% !important;
+		left: auto !important;
+		transform: unset !important;
 
-		> li > .toolbar {
-			float: right;
-			min-width: 260px;
-			margin-top: 0px;
+		> li,
+		> li .toolbar {
+			display: block;
 			width: 100%;
+			box-sizing: border-box;
 		}
-		> li > .toolbar:hover {
-			background: #e0e0e0;
-			color: black;
+		> li .toolbar:hover {
+			/*background: #e0e0e0;
+			color: black;*/
 		}
 	}
 	
@@ -1949,8 +2064,7 @@ div.current ul.config-option-list li fieldset {
 		margin: 0;
 	}
 
-	> .toolbar + .dropdown-toggle {
-		margin: 0 0 0 8px;
+	> .toolbar + .dropdown-toggle:not(.dropdown-toggle-split) {
 		padding-top: 1px;
 	}
 	> .dropdown-toggle:first-child .caret {
@@ -1992,7 +2106,9 @@ div.current ul.config-option-list li fieldset {
 }
 
 .prettyradio input, .prettycheckbox input {
-	display:inline-block !important; visibility:hidden !important; float:right !important;
+	display: none !important;
+	padding: 0 !important;
+	margin: 0 !important;
 }
 
 .prettyradio > a.disabled,
@@ -2048,6 +2164,11 @@ html[dir="rtl"] .select2-container .select2-choice {
 	white-space: normal !important; /* for chrome! */
 	width: auto !important;
 	min-width: 24px !important;
+}
+
+/* height fix for template CSS */
+.select2-container-multi .select2-choices > li {
+	box-sizing: content-box;
 }
 
 /* search box container */

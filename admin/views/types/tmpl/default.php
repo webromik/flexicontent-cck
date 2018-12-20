@@ -163,7 +163,7 @@ function delAllFilters() {
 
 	<table id="adminListTableFCtypes" class="adminlist fcmanlist">
 	<thead>
-		<tr class="header">
+		<tr>
 			<th class="hidden-phone"><?php echo JText::_( 'FLEXI_NUM' ); ?></th>
 			<th class="left">
 				<input type="checkbox" name="checkall-toggle" id="checkall-toggle" value="" title="<?php echo JText::_('JGLOBAL_CHECK_ALL'); ?>" onclick="Joomla.checkAll(this)" />
@@ -205,7 +205,6 @@ function delAllFilters() {
    		?>
 		<tr class="<?php echo "row$k"; ?>">
 			<td class="hidden-phone">
-				<div class="adminlist-table-row"></div>
 				<?php echo $this->pagination->getRowOffset( $i ); ?>
 			</td>
 			<td>

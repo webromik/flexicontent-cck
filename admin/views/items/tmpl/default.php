@@ -860,7 +860,6 @@ jQuery(document).ready(function(){
 		<tr class="<?php echo 'row'.($i % 2); ?>">
 
 			<!--td class="col_rowcount">
-				<div class="adminlist-table-row"></div>
 				<?php /*echo $this->pagination->getRowOffset( $i );*/ ?>
 			</td-->
 

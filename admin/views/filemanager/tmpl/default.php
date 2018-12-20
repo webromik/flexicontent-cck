@@ -632,7 +632,7 @@ $tools_cookies['fc-filters-box-disp'] = $jinput->cookie->get('fc-filters-box-dis
 
 			<table id="adminListTableFCfiles<?php echo $this->layout.$this->fieldid; ?>" class="adminlist fcmanlist fman_list_element">
 			<thead>
-    		<tr class="header">
+    		<tr>
 					<th class="center hidden-phone"><?php echo JText::_( 'FLEXI_NUM' ); ?></th>
 
 					<th>&nbsp;</th>
@@ -813,8 +813,7 @@ $tools_cookies['fc-filters-box-disp'] = $jinput->cookie->get('fc-filters-box-dis
 		   		?>
 				<tr class="<?php echo 'row'.$k; ?>">
 					<td class="center hidden-phone">
-						<div class="adminlist-table-row"></div>
-						<?php echo $this->pagination->getRowOffset( $i ); ?>
+								<?php echo $this->pagination->getRowOffset( $i ); ?>
 					</td>
 					
 					<td class="center <?php echo ($file_is_selected ? ' is-pending-file' : ''); ?>">

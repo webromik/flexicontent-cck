@@ -405,7 +405,6 @@ function delAllFilters() {
 			</td>
 
 			<!--td>
-				<div class="adminlist-table-row"></div>
 				<?php echo $this->pagination->getRowOffset( $i ); ?>
 			</td-->
 

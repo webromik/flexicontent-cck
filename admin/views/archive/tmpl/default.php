@@ -87,7 +87,6 @@ $categories_task = FLEXI_J16GE ? 'task=categories.' : 'controller=categories&amp
    		?>
 		<tr class="<?php echo "row$k"; ?>">
 			<td>
-				<div class="adminlist-table-row"></div>
 				<?php echo $this->pageNav->getRowOffset( $i ); ?>
 			</td>
 			<td>
